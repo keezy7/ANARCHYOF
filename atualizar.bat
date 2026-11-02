@@ -1,5 +1,5 @@
 @echo off
 git add .
-git commit -m "atualizacao %date% %time%"
+git commit -m "updates! %date% %time%"
 git push
 pause
