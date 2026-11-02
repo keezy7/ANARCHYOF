@@ -1,0 +1,1680 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Anarchy</title>
+<link rel="icon" href="/logo_anarchy.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap">
+<style>
+:root{color-scheme:dark;--bg:#0a0a0a;--ink:#e5e5e5;--mute:#8a8a8a;--line:#222222;--soft:#141414;--soft2:#1a1a1a;--blue:#ff2d2d;--link:#ff4d4d;--red:#ff2d2d;--g:linear-gradient(45deg,#ff2d2d,#8b0000);--ease:cubic-bezier(.2,.8,.2,1)}
+*{box-sizing:border-box}
+html{scrollbar-color:var(--soft2) transparent}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.4 "Bricolage Grotesque",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none;padding:0;transition:transform .15s var(--ease),background .2s,opacity .2s}
+button:active{transform:scale(.95)}
+input,textarea{width:100%;padding:.65rem .85rem;border:1px solid var(--line);border-radius:10px;background:var(--soft);transition:border-color .2s,box-shadow .2s}#mt{min-height:2.75rem;flex:1;flex-shrink:0;min-width:0}
+input:focus,textarea:focus{outline:0;border-color:var(--blue);box-shadow:0 0 0 3px rgba(76,95,255,.25)}
+textarea{resize:vertical;min-height:70px;margin:.5rem 0}
+:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.bl,.gh{border-radius:10px;padding:.5rem 1rem;font-weight:700;white-space:nowrap}
+.bl{background:var(--blue);color:#fff}.bl:hover{filter:brightness(1.12)}
+.gh{background:var(--soft)}.gh:hover{background:var(--soft2)}
+.lnk{color:var(--link);font-weight:700;font-size:.85rem}.lnk:hover{color:#fff}.lnk.off{color:var(--mute)}
+.hide{display:none!important}small{color:var(--mute)}.err{color:#ff5c6a;min-height:1.2em}
+.empty{color:var(--mute);text-align:center;padding:2rem 0}
+.row{display:flex;gap:.5rem;align-items:center}
+.av{border-radius:50%;object-fit:cover;background:var(--soft);display:inline-grid;place-items:center;font-weight:700;flex:none}
+.vf{display:inline-grid;place-items:center;width:15px;height:15px;border-radius:50%;background:var(--blue);color:#fff;font-size:10px;margin-left:4px;vertical-align:middle}
+.ic{display:block;flex:none}
+.ib{width:34px;height:34px;display:grid;place-items:center;border-radius:50%}.ib:hover{background:var(--soft)}
+
+/* ---------- animações ---------- */
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes fadeOut{to{opacity:0}}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes zoomIn{from{opacity:0;transform:scale(.88) translateY(12px)}to{opacity:1;transform:none}}
+@keyframes zoomOut{to{opacity:0;transform:scale(.92)}}
+@keyframes slideIn{from{opacity:0;transform:translateX(-40px)}to{opacity:1;transform:none}}
+@keyframes slideOut{to{opacity:0;transform:translateX(-40px)}}
+@keyframes slideUp{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:none}}
+@keyframes popMenu{from{opacity:0;transform:scale(.9) translateY(10px)}to{opacity:1;transform:none}}
+@keyframes heart{0%{transform:scale(1)}30%{transform:scale(1.35)}60%{transform:scale(.9)}100%{transform:scale(1)}}
+@keyframes burst{0%{opacity:0;transform:translate(-50%,-50%) scale(.3)}25%{opacity:1;transform:translate(-50%,-50%) scale(1.15)}60%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-60%) scale(1)}}
+@keyframes fill{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes shimmer{to{background-position:-200% 0}}
+@keyframes ping{0%{transform:scale(.4)}60%{transform:scale(1.25)}100%{transform:scale(1)}}
+#view.fx{animation:rise .38s var(--ease)}
+.stg>*{animation:rise .45s var(--ease) both;animation-delay:calc(min(var(--i,0),14)*45ms)}
+.sk{background:linear-gradient(90deg,var(--soft) 25%,var(--soft2) 50%,var(--soft) 75%);background-size:200% 100%;animation:shimmer 1.3s linear infinite;border-radius:10px}
+@media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-delay:0ms!important;transition-duration:.01ms!important}}
+
+/* ---------- login ---------- */
+#auth{max-width:350px;margin:7vh auto;padding:2rem 1.5rem;text-align:center;border:1px solid var(--line);border-radius:18px;background:rgba(255,255,255,.015);animation:zoomIn .5s var(--ease)}
+#auth img{width:110px;border-radius:24%}
+#auth h1{font-size:2.6rem;font-weight:800;letter-spacing:-.04em;margin:.4rem 0 1rem;background:var(--g);-webkit-background-clip:text;background-clip:text;color:transparent}
+#auth input{margin-bottom:.6rem}#auth .row button{flex:1}
+
+/* ---------- barra lateral ---------- */
+#side{position:fixed;left:0;top:0;bottom:0;width:72px;border-right:1px solid var(--line);padding:.8rem .65rem;display:flex;flex-direction:column;gap:.15rem;background:var(--bg);z-index:30;overflow:hidden;transition:width .28s var(--ease),box-shadow .28s}
+#side:hover{width:244px;box-shadow:12px 0 40px rgba(0,0,0,.45)}
+body.pn #side:hover{width:72px;box-shadow:none}
+.lw{display:flex;align-items:center;gap:.8rem;padding:.35rem .35rem 1.2rem;width:100%;text-align:left}
+.lw img{width:34px;height:34px;border-radius:24%;flex:none}
+.lt{font-weight:800;font-size:1.2rem;letter-spacing:-.03em;background:var(--g);-webkit-background-clip:text;background-clip:text;color:transparent}
+.nv{display:flex;gap:1rem;align-items:center;padding:.8rem .75rem;border-radius:12px;font-size:1rem;width:100%;text-align:left;white-space:nowrap;position:relative}
+.nv:hover{background:var(--soft)}.nv.on{font-weight:800}.nv.on .ic{stroke-width:2.6}
+.nv:hover .ii{transform:scale(1.1)}.ii{position:relative;display:grid;transition:transform .2s var(--ease)}
+.nv>span,.lt{opacity:0;transform:translateX(-8px);transition:opacity .2s,transform .25s var(--ease)}
+#side:hover .nv>span,#side:hover .lt{opacity:1;transform:none}
+body.pn #side:hover .nv>span,body.pn #side:hover .lt{opacity:0;transform:translateX(-8px)}
+.sp{margin-top:auto}
+.bd{position:absolute;top:-6px;right:-7px;min-width:17px;height:17px;padding:0 4px;border-radius:9px;background:var(--red);color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center;border:2px solid var(--bg);animation:ping .35s var(--ease)}
+main{margin-left:72px}
+#view{min-height:100vh}
+@media(max-width:760px){
+  #side,#side:hover{top:auto;width:auto;right:0;flex-direction:row;border:0;border-top:1px solid var(--line);padding:.2rem .4rem;justify-content:space-around;box-shadow:none;height:56px}
+  .nv>span,.lt,.lw,.sp{display:none}.nv{justify-content:center;width:auto;padding:.7rem}main{margin-left:0;padding-bottom:60px}
+  #side .nv[data-more]{display:none}
+}
+
+/* ---------- painéis (notificações / pesquisa) ---------- */
+#panel{position:fixed;left:72px;top:0;bottom:0;width:397px;max-width:calc(100vw - 72px);background:var(--bg);border-right:1px solid var(--line);border-radius:0 18px 18px 0;z-index:25;overflow-y:auto;padding:1.4rem 0 1rem;box-shadow:10px 0 40px rgba(0,0,0,.4);animation:slideIn .32s var(--ease)}
+#panel.out{animation:slideOut .22s ease forwards}
+#panel h2{margin:0 1.4rem 1rem;font-size:1.5rem;font-weight:800}
+#panel h4{margin:1rem 1.4rem .4rem;font-size:1rem}
+.chips{display:flex;gap:.5rem;overflow-x:auto;padding:0 1.4rem .6rem;scrollbar-width:none}
+.chip{border:1px solid var(--line);border-radius:20px;padding:.35rem .9rem;white-space:nowrap;font-weight:600;font-size:.85rem}
+.chip.on{background:var(--soft2);border-color:var(--soft2)}.chip:hover{background:var(--soft)}
+.nt{display:flex;align-items:center;gap:.75rem;padding:.7rem 1.4rem;cursor:pointer;transition:background .2s}
+.nt:hover{background:rgba(255,255,255,.04)}.nt.new{background:rgba(76,95,255,.1)}
+.sw{display:flex;gap:.7rem;margin:.5rem 0 .2rem}
+.sp{width:44px;height:44px;border-radius:8px;object-fit:cover;background:#000;flex:none}
+.sb{background:#000;border-radius:12px;padding:.55rem .85rem;max-width:220px}
+.st{color:#fff;font-size:.8rem;line-height:1.25}
+.nt .tx{flex:1;line-height:1.3}.nt .tx small{white-space:nowrap}
+.nt .th{width:44px;height:44px;border-radius:8px;object-fit:cover;background:var(--soft);flex:none}
+.sres{padding:0 .6rem}
+@media(max-width:760px){#panel{left:0;right:0;bottom:56px;width:auto;max-width:none;border-radius:0;animation-name:slideUp}}
+
+/* ---------- menu "Mais" ---------- */
+#more{position:fixed;left:12px;bottom:64px;width:262px;background:var(--soft);border-radius:16px;padding:.5rem;z-index:40;box-shadow:0 8px 40px rgba(0,0,0,.6);transform-origin:bottom left;animation:popMenu .22s var(--ease)}
+#more.out{animation:zoomOut .15s ease forwards}
+#more button{display:flex;gap:.8rem;align-items:center;width:100%;padding:.8rem;border-radius:10px;text-align:left}
+#more button:hover{background:var(--soft2)}
+
+/* ---------- início ---------- */
+.home{display:flex;justify-content:center;gap:4rem;padding:1.4rem 1rem 5rem}
+.hc{width:min(630px,100%);min-width:0}
+.rc{width:320px;flex:none;position:sticky;top:1.4rem;align-self:flex-start}
+@media(max-width:1180px){.rc{display:none}}
+.stories{display:flex;gap:.9rem;overflow-x:auto;padding:0 0 1.2rem;scrollbar-width:none;max-width:470px;margin:0 auto}
+.st{display:grid;justify-items:center;gap:.3rem;width:78px;flex:none}.st small{max-width:76px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink);font-size:.78rem}
+.st:hover .ring{transform:scale(1.06)}
+.ring{padding:3px;border-radius:50%;background:var(--g);display:grid;transition:transform .2s var(--ease)}.ring.seen{background:#5a606c}.ring .av{border:3px solid var(--bg)}
+.post{margin:0 auto 1.4rem;padding-bottom:.8rem;width:min(470px,100%);border-bottom:1px solid var(--line)}
+.ph{display:flex;align-items:center;gap:.6rem;padding:.55rem 0}
+.ph b,.ph a{cursor:pointer}.ph .who{flex:1;min-width:0}.ph .who small{margin-left:2px}
+.mo{width:32px;height:32px;border-radius:50%;display:grid;place-items:center}.mo:hover{background:var(--soft)}
+.pm{position:relative;border-radius:6px;overflow:hidden;background:#000}
+.pm img,.pm video{width:100%;display:block;max-height:640px;object-fit:cover}
+.mute{position:absolute;right:12px;bottom:12px;width:32px;height:32px;border-radius:50%;background:rgba(0,0,0,.6);display:grid;place-items:center;color:#fff;z-index:2}
+.bh{position:absolute;left:50%;top:50%;color:#fff;pointer-events:none;animation:burst .8s var(--ease) forwards;filter:drop-shadow(0 4px 16px rgba(0,0,0,.5));z-index:3}
+.pa{display:flex;gap:1.1rem;align-items:center;padding:.6rem 0 .3rem}
+.ab{display:inline-flex;align-items:center;gap:.4rem;font-weight:600}.ab:hover{opacity:.7}
+.ab.lk.on svg{fill:var(--red);stroke:var(--red)}
+.sci{flex:1;min-width:0;padding:.65rem 1rem;border-radius:999px;border:1px solid rgba(255,255,255,.35);background:rgba(10,14,20,.55);color:#fff;backdrop-filter:blur(6px)}.sci::placeholder{color:rgba(255,255,255,.7)}.sci:focus{border-color:#fff;box-shadow:none}
+.sl.on svg{fill:var(--red);stroke:var(--red)}.ab.lk.pop svg{animation:heart .45s var(--ease)}
+.pb p{margin:.2rem 0}.pb .pl{font-weight:700}.pb input{border:0;background:none;padding:.5rem 0;box-shadow:none}
+.pb .more{color:var(--mute);cursor:pointer;display:inline-block;margin:.1rem 0}
+.tg a{color:var(--link);cursor:pointer;margin-right:.35rem}
+.ro{color:var(--mute);font-size:.8rem}
+.acc{display:flex;align-items:center;gap:.8rem;margin-bottom:1.2rem}.acc>span:not(.av){flex:1;display:grid;line-height:1.2;min-width:0}
+.sg{display:flex;align-items:center;gap:.8rem;padding:.45rem 0;animation:rise .4s var(--ease) both}.sg>span:not(.av){flex:1;display:grid;line-height:1.25;min-width:0}.sg>span:not(.av) *{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sg b,.acc b{cursor:pointer}
+.foot{margin-top:1.6rem;color:#5d6572;font-size:.75rem;line-height:1.7}
+
+/* ---------- reels ---------- */
+.reels{height:100vh;overflow-y:auto;scroll-snap-type:y mandatory;scrollbar-width:none;display:flex;flex-direction:column;align-items:center}
+.reel{position:relative;flex:none;height:100vh;width:min(430px,100%);scroll-snap-align:start;padding:14px 0;display:flex}
+.reel video{width:100%;height:100%;object-fit:cover;border-radius:14px;background:#000;cursor:pointer}
+.reel .mute{top:28px;right:14px;bottom:auto}
+.vc{position:absolute;right:12px;bottom:12px;z-index:2;display:flex;align-items:center;flex-direction:row;background:rgba(0,0,0,.6);border-radius:20px;color:#fff}
+.vc .vb{width:32px;height:32px;display:grid;place-items:center;border-radius:50%;color:#fff;flex:none}
+.vsl{-webkit-appearance:none;appearance:none;width:0;opacity:0;margin:0;padding:0;height:4px;border:0;border-radius:4px;box-shadow:none;background:linear-gradient(to right,#fff var(--p,100%),rgba(255,255,255,.3) var(--p,100%));cursor:pointer;transition:width .2s var(--ease),opacity .2s,margin .2s}
+.vsl:focus{box-shadow:none;border:0}
+.vc:hover .vsl,.vc:focus-within .vsl{width:84px;opacity:1;margin:0 .2rem 0 .7rem}
+@media(hover:none){.vc .vsl{width:84px;opacity:1;margin:0 .2rem 0 .7rem}}
+.vsl::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;border-radius:50%;background:#fff;border:0;box-shadow:0 0 0 2px rgba(0,0,0,.25)}
+.vsl::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:#fff;border:0}
+.rtop{position:absolute;top:28px;right:14px;z-index:2;display:flex;align-items:center;gap:.5rem}.rtop .mute,.rtop .vc{position:static}
+.sh .vc{position:static;background:rgba(255,255,255,.12)}.sh .vc .vb{margin:0}
+.pp{position:absolute;inset:0;display:none;place-items:center;pointer-events:none;z-index:2}.paused>.pp{display:grid}.pp svg{box-sizing:content-box;padding:22px 22px 22px 26px;border-radius:50%;background:rgba(0,0,0,.5);color:#fff;fill:#fff;backdrop-filter:blur(4px);animation:zoomIn .22s var(--ease)}
+.tm{position:absolute;left:40%;width:20%;top:60px;bottom:70px;z-index:1}
+.ra{position:absolute;right:-64px;bottom:20px;display:flex;flex-direction:column;gap:1.1rem;align-items:center}
+.ra .ab{flex-direction:column;gap:.15rem;font-size:.8rem}
+.ri{position:absolute;left:0;right:0;bottom:14px;padding:3rem 1rem 1rem;background:linear-gradient(transparent,rgba(0,0,0,.75));border-radius:0 0 14px 14px;color:#fff;pointer-events:none}
+.ri *{pointer-events:auto}.ri p{margin:.4rem 0 0}.ri b{cursor:pointer}
+@media(max-width:560px){.reel{padding:0}.reel video,.ri{border-radius:0}.ra{right:10px;bottom:90px;color:#fff;filter:drop-shadow(0 1px 6px rgba(0,0,0,.6))}.reels,.reel{height:calc(100vh - 56px)}}
+@media(max-width:760px){.reels,.reel{height:calc(100vh - 56px)}}
+
+/* ---------- perfil ---------- */
+.prof{max-width:935px;margin:0 auto;padding:2rem 1rem 5rem}
+.pt{display:flex;gap:4rem;align-items:flex-start;padding:0 1rem}
+.pt .pav{flex:none}.pt .pi{display:grid;gap:.9rem;min-width:0;flex:1}
+.pt h2{margin:0;font-size:1.25rem}.cnt{display:flex;gap:2rem}
+.bio{line-height:1.45}.bio p{margin:.15rem 0;white-space:pre-wrap}
+.pbt{display:flex;gap:.5rem;margin:1.4rem 0 0}.pbt button{flex:1;padding:.7rem;border-radius:10px}
+.hl{display:flex;gap:1.4rem;padding:1.6rem 1rem 1.2rem}.hl button{display:grid;justify-items:center;gap:.4rem;font-weight:600;font-size:.8rem}
+.hl .nw{width:86px;height:86px;border-radius:50%;border:2px solid var(--line);background:var(--soft);display:grid;place-items:center;color:var(--mute);transition:transform .2s var(--ease),border-color .2s}.hl button:hover .nw{transform:scale(1.06);border-color:var(--mute)}
+.tabs{position:relative;display:flex;justify-content:center;border-top:1px solid var(--line);margin-top:.6rem}
+.tab{display:flex;align-items:center;gap:.5rem;padding:1rem 1.6rem;color:var(--mute);font-weight:700;font-size:.74rem;letter-spacing:.09em;text-transform:uppercase}
+.tab:hover{color:var(--ink)}.tab.on{color:var(--ink)}
+.ink{position:absolute;top:-1px;height:2px;background:var(--ink);width:0;transition:left .35s var(--ease),width .35s var(--ease)}
+.tc{min-height:260px;padding-top:4px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
+.gi{position:relative;aspect-ratio:1;cursor:pointer;background:var(--soft);overflow:hidden}
+.gi.tall{aspect-ratio:9/14}
+.gi img,.gi video{width:100%;height:100%;object-fit:cover;transition:transform .4s var(--ease)}
+.gi:hover img,.gi:hover video{transform:scale(1.06)}
+.gi>i{position:absolute;top:8px;right:8px;color:#fff;filter:drop-shadow(0 1px 3px rgba(0,0,0,.6))}
+.gi .ov2{position:absolute;inset:0;background:rgba(0,0,0,.45);display:flex;gap:1.2rem;align-items:center;justify-content:center;font-weight:700;color:#fff;opacity:0;transition:opacity .2s}
+.gi:hover .ov2{opacity:1}.gi .ov2 span{display:flex;gap:.35rem;align-items:center}
+.eg{text-align:center;padding:3.5rem 1rem 2rem;display:grid;justify-items:center;gap:.7rem;animation:rise .4s var(--ease)}
+.eg .circ{width:62px;height:62px;border:2px solid var(--ink);border-radius:50%;display:grid;place-items:center}
+.eg h3{margin:.3rem 0 0;font-size:1.9rem;font-weight:800}.eg p{margin:0;max-width:340px}
+.song{display:inline-flex;align-items:center;gap:.6rem;background:var(--soft);border-radius:20px;padding:.3rem .9rem .3rem .3rem;margin:.4rem 0}
+.song button{width:28px;height:28px;border-radius:50%;background:var(--ink);color:var(--bg)}.song img,.sa{width:32px;height:32px;border-radius:6px}.song>span:not(.av),.rq>span:not(.av){display:grid;line-height:1.15}
+/* Novo design do player de áudio no DM (estilo azul da Image 2) */
+.audio-bubble{display:flex;flex-direction:column;align-items:flex-start;gap:.4rem;background:#4c5fff;color:#fff;border-radius:16px;padding:.7rem 1rem;max-width:260px;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.audio-player{display:flex;align-items:center;gap:.8rem;width:100%}
+.audio-btn{width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.2);border:none;color:#fff;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center}
+.audio-progress{flex:1;height:4px;background:rgba(255,255,255,.4);border-radius:2px;position:relative;cursor:pointer}
+.audio-progress-fill{height:100%;background:#fff;border-radius:2px;width:0%}
+.audio-dots{display:flex;gap:1px;flex:1;height:4px}
+.audio-dot{width:2px;height:4px;background:rgba(255,255,255,.6);border-radius:1px}
+.audio-time{font-size:.75rem;min-width:32px;text-align:right}
+.audio-transcript{font-size:.72rem;color:rgba(255,255,255,.9);cursor:pointer;padding-top:.1rem}
+.dm-menu-item{width:100%;padding:.6rem 1rem;background:none;border:none;color:var(--ink);font-size:.9rem;cursor:pointer;text-align:left}
+.dm-menu-item:hover{background:rgba(255,255,255,.05)}
+.dm-menu-del{color:var(--red)}
+.rq{display:flex;align-items:center;gap:.7rem;padding:.5rem;border-radius:10px;width:100%;text-align:left;cursor:pointer;transition:background .2s;background:var(--soft2)}.rq.on,.rq:hover{background:var(--soft)}.rq>span:not(.av){flex:1;min-width:0}
+.reqs{border:1px solid var(--line);border-radius:12px;padding:.6rem;margin:1rem 1rem 0;animation:rise .4s var(--ease)}
+@media(max-width:760px){.pt{gap:1.2rem;padding:0}.pt .av{width:80px!important;height:80px!important;font-size:34px!important}.cnt{gap:1rem}.tab{padding:.9rem 1rem}.tab span{display:none}.hl{padding:1.2rem 0}.prof{padding-top:1rem}}
+
+/* ---------- janelas ---------- */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.68);backdrop-filter:blur(3px);display:grid;place-items:center;z-index:50;padding:1rem;animation:fadeIn .22s ease}
+.ov.out{animation:fadeOut .2s ease forwards}.ov.out .box,.ov.out .sbox{animation:zoomOut .2s ease forwards}
+.box{background:var(--soft);border-radius:16px;padding:1.1rem;width:min(480px,100%);max-height:90vh;overflow:auto;animation:zoomIn .32s var(--ease)}
+.box.wide{width:min(1100px,100%);padding:0;overflow:hidden;background:var(--bg)}
+.box.sheet{width:min(400px,100%);padding:0;text-align:center}.box.sheet button{display:block;width:100%;padding:.95rem;border-bottom:1px solid var(--line)}.box.sheet button:last-child{border:0}.box.sheet button:hover{background:var(--soft2)}.box.sheet .rd{color:#ff5c6a;font-weight:700}
+#ask{z-index:90}.askb{width:min(360px,100%);text-align:center;padding:1.6rem 1.3rem 1.2rem}.askb p{margin:0 0 1.3rem;font-size:1.05rem;font-weight:700;line-height:1.35}.askb .row{justify-content:center;gap:.7rem}.askb .row button{flex:1;padding:.7rem 1rem}.askb .dg{background:var(--red)}.askb button:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.box h3{margin:0 0 .6rem}.box label{display:block;margin:.7rem 0 .2rem;color:var(--mute)}.box label.chk{display:flex;gap:.5rem;align-items:center;color:var(--ink)}.chk input{width:auto}
+.box input,.box textarea{background:var(--bg)}
+.drop{display:grid;place-items:center;min-height:210px;border:2px dashed var(--soft2);border-radius:14px;cursor:pointer;text-align:center;color:var(--mute);overflow:hidden;margin:0!important;transition:border-color .2s,background .2s}
+.drop:hover{border-color:var(--blue);background:rgba(76,95,255,.06)}.drop img,.drop video{width:100%;max-height:300px;object-fit:cover}
+.pdet{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(300px,1fr);height:min(86vh,680px)}
+.pdm{background:#000;display:grid;place-items:center;min-height:0}.pdm img,.pdm video{width:100%;height:100%;object-fit:contain;border-radius:0}.dmsg video{width:140px;height:140px;border-radius:16px;object-fit:cover;background:#000}
+.pdr{display:flex;flex-direction:column;min-height:0;min-width:0}
+.pdh{display:flex;align-items:center;gap:.6rem;padding:.9rem 1rem;border-bottom:1px solid var(--line)}.pdh b{cursor:pointer;flex:1}
+.pdc{flex:1;overflow:auto;padding:1rem}.pdc p{margin:.1rem 0 .7rem}.pdr .pa{padding:.7rem 1rem .2rem;border-top:1px solid var(--line)}
+.pdr .pl{padding:0 1rem .5rem;font-weight:700}.pdr .pin{border-top:1px solid var(--line);padding:.2rem 1rem}.pdr .pin input{border:0;background:none;box-shadow:none;padding:.7rem 0}
+@media(max-width:760px){.pdet{grid-template-columns:1fr;height:auto;max-height:88vh;overflow:auto}.pdm{max-height:50vh}.pdc{max-height:30vh}}
+.ov.dark{background:#000;backdrop-filter:none}
+#cropperOverlay{position:fixed;inset:0;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;z-index:1000}
+.sbox{position:relative;width:min(400px,100%);height:min(88vh,720px);background:#111;border-radius:12px;overflow:hidden;display:grid;place-items:center}
+.sbox.first{animation:zoomIn .4s var(--ease)}
+@keyframes sInR{from{opacity:0;transform:translateX(105%) scale(.88)}to{opacity:1;transform:none}}@keyframes sInL{from{opacity:0;transform:translateX(-105%) scale(.88)}to{opacity:1;transform:none}}
+@keyframes sOutL{to{opacity:0;transform:translateX(-105%) scale(.88)}}@keyframes sOutR{to{opacity:0;transform:translateX(105%) scale(.88)}}
+#sv{overflow:hidden}
+.sbox.inR{animation:sInR .55s cubic-bezier(.22,.8,.24,1)}.sbox.inL{animation:sInL .55s cubic-bezier(.22,.8,.24,1)}
+.sbox.ghost{position:fixed;margin:0;z-index:60;pointer-events:none}.sbox.ghost.outL{animation:sOutL .55s cubic-bezier(.22,.8,.24,1) forwards}.sbox.ghost.outR{animation:sOutR .55s cubic-bezier(.22,.8,.24,1) forwards}
+/* a troca de story continua animada mesmo com "reduzir animações" ligado no Windows */
+@media(prefers-reduced-motion:reduce){.sbox.inR,.sbox.inL,.sbox.ghost.outL,.sbox.ghost.outR{animation-duration:.55s!important}.sbox .sm{animation-duration:.3s!important}}
+.sbox .sm{width:100%;height:100%;object-fit:contain;animation:fadeIn .3s ease}
+.bars{position:absolute;top:8px;left:8px;right:8px;display:flex;gap:4px;z-index:2}.bars i{flex:1;height:3px;background:rgba(255,255,255,.35);border-radius:2px;position:relative;overflow:hidden}.bars i.f{background:#fff}
+.bars i b{position:absolute;inset:0;background:#fff;transform-origin:left;transform:scaleX(0);will-change:transform}
+.sh{position:absolute;top:18px;left:10px;right:10px;display:flex;gap:.5rem;align-items:center;color:#fff;z-index:3}.sh small{color:#ddd}.sh button{color:#fff}.sh .hr{margin-left:auto;display:flex;align-items:center;gap:.5rem}
+.tl,.tr{position:absolute;top:60px;bottom:0;width:40%;z-index:1}.tl{left:0}.tr{right:0}
+
+/* ---------- mensagens ---------- */
+#chat{display:grid;grid-template-columns:320px minmax(0,1fr);width:calc(100% - 2rem);max-width:1400px;height:calc(100dvh - 2rem);min-height:420px;border:1px solid var(--line);border-radius:16px;overflow:hidden;margin:1rem auto}
+#cl{border-right:1px solid var(--line);overflow-y:auto;min-height:0;padding:.5rem;background:var(--soft)}
+#cl h3{margin:0 -.5rem .5rem;padding:.85rem .6rem .5rem;font-size:1.05rem;position:sticky;top:-.5rem;z-index:2;background:var(--soft)}
+#cl .rq{margin-bottom:.3rem}
+#room{display:flex;flex-direction:column;min-width:0;min-height:0;background:var(--bg)}
+.rh{display:flex;justify-content:space-between;align-items:center;gap:.6rem;padding:.9rem 1rem;border-bottom:1px solid var(--line);font-weight:700;flex:none}
+.rh .rhname{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}
+.rh .rhactions{display:flex;gap:.3rem;flex:none}
+#msgs{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:1rem;display:flex;flex-direction:column;align-items:flex-start;gap:.35rem}
+#msgs>.empty{margin:auto;align-self:center;max-width:80%}
+.m{max-width:min(72%,560px);padding:.55rem .9rem;border-radius:18px;background:var(--soft);overflow-wrap:anywhere;word-break:break-word;animation:zoomIn .25s var(--ease);transform-origin:left bottom}
+.m.me{align-self:flex-end;background:#1e1e1e;color:#fff;transform-origin:right bottom}
+.m .mtools{display:flex;justify-content:flex-end;gap:.15rem;margin-top:0;padding:0 .1rem;max-height:0;overflow:hidden;opacity:0;pointer-events:none;transition:opacity .15s,max-height .15s,margin-top .15s}
+.m:hover .mtools,.m:focus-within .mtools{max-height:40px;margin-top:.3rem;opacity:1;pointer-events:auto}
+.m .mtools button{font-size:.68rem;padding:.12rem .45rem;border-radius:6px;color:var(--mute)}
+.m .mtools button:hover{background:rgba(255,255,255,.08);color:var(--ink)}
+@media(hover:none){.m .mtools{max-height:none;margin-top:.3rem;opacity:1;pointer-events:auto}}
+/* player de áudio da DM */
+.dm-audio{display:flex;align-items:center;gap:.55rem;width:230px;max-width:100%;padding:.1rem 0}
+.dm-audio .aplay{width:34px;height:34px;flex:none;border-radius:50%;background:var(--ink);color:var(--bg);display:grid;place-items:center;font-size:13px;line-height:1}
+.dm-audio .abar{position:relative;flex:1;height:4px;border-radius:2px;background:rgba(255,255,255,.18);cursor:pointer;overflow:hidden}
+.dm-audio .abar i{display:block;height:100%;width:0;background:currentColor;border-radius:2px;transition:width .08s linear}
+.dm-audio .atime{flex:none;font-size:.7rem;opacity:.8;min-width:32px;text-align:right;font-variant-numeric:tabular-nums}
+.m .alabel{display:block;font-size:.68rem;opacity:.7;margin-top:.25rem}
+#send{display:flex;gap:.5rem;padding:.7rem;border-top:1px solid var(--line);flex:none}
+#send input{min-width:0}
+.mp{width:200px;cursor:pointer;margin-bottom:.3rem}.mp img,.mp video{width:100%;border-radius:10px;max-height:240px;object-fit:cover;display:block}.mp small{color:inherit}
+@media(max-width:760px){#chat{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);width:100%;height:calc(100dvh - 60px);min-height:0;margin:0;border:0;border-radius:0}#room{height:auto;min-height:0}#cl{display:flex;overflow-x:auto;overflow-y:hidden;border:0;border-bottom:1px solid var(--line);flex:none;align-items:center;min-width:0;max-width:100%;padding:.35rem .4rem}#cl h3{display:none}#cl .rq{width:auto;margin:0 .2rem;flex:none;padding:.3rem .5rem;gap:.45rem}#cl .rq .av{width:34px!important;height:34px!important;font-size:14px!important}#cl .empty{padding:.8rem;margin:0}}
+#pill{position:fixed;right:24px;bottom:24px;display:flex;align-items:center;gap:.8rem;background:var(--soft);padding:.7rem 1.1rem;border-radius:30px;font-weight:700;box-shadow:0 6px 30px rgba(0,0,0,.5);z-index:20;animation:slideUp .5s var(--ease)}
+#pill:hover{background:var(--soft2);transform:translateY(-2px)}
+@media(max-width:760px){#pill{display:none}}
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--soft2);color:#fff;padding:.65rem 1.1rem;border-radius:10px;z-index:99;animation:slideUp .3s var(--ease);box-shadow:0 6px 24px rgba(0,0,0,.5)}
+</style>
+</head>
+<body>
+
+<section id="auth">
+  <img src="/logo_anarchy.png" alt="" style="width:110px;height:auto;border-radius:0;">
+  <h1>Anarchy</h1>
+  <input id="u" placeholder="Nome de usuário" autocomplete="username">
+  <input id="p" type="password" placeholder="Senha (mín. 6 caracteres)" autocomplete="current-password" onkeydown="if(event.key==='Enter')auth('login')">
+  <div class="row"><button class="bl" onclick="auth('login')">Entrar</button><button class="gh" onclick="auth('register')">Criar conta</button></div>
+  <p class="err" id="aerr"></p>
+</section>
+
+<div id="app" class="hide">
+  <nav id="side"></nav>
+  <main><div id="view"></div></main>
+  <button id="pill" class="hide" onclick="go('chats')"></button>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+let token = localStorage.token, me, sock, peer = null, pendingPeer = null, view = 'home', G = [], SR = [], song = {}, au, stRaf = 0, stClock = null, stGi = null, stSid = null, sT;
+let panel = null, nfAll = [], nfFilter = 'all', unread = 0, muted = true, curTab = 'feed', lastProf = null, PD = {}, JL = null;
+let chatUsers = [], chatLoadId = 0;
+const dmSrc = new Map(), dmAudios = new Map();
+const P = {};
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const linkify = (t) => String(t ?? '').replace(/(https?:\/\/[^\s<]+)|(^|[^\w@\/])@([a-zA-Z0-9_]{3,20})/g, (m, url, pre, un) => url
+  ? `<a href="${url}" target="_blank" rel="noopener" style="color:var(--link);text-decoration:underline">${url}</a>`
+  : `${pre}<a onclick="event.stopPropagation();go('profile','${un.toLowerCase()}')" style="color:var(--link);cursor:pointer;font-weight:600">@${un}</a>`);
+const rt = (t) => {
+  const s = (Date.now() - t) / 1e3;
+  if (s < 60) return 'agora'; if (s < 3600) return Math.floor(s / 60) + ' min'; if (s < 86400) return Math.floor(s / 3600) + ' h';
+  if (s < 604800) return Math.floor(s / 86400) + ' d'; if (s < 2592000) return Math.floor(s / 604800) + ' sem';
+  return new Date(t).toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' });
+};
+const vf = (v) => (v ? '<span class="vf" title="Verificado">✓</span>' : '');
+const av = (u, s = 32) => (u && u.avatar
+  ? `<img class="av" style="width:${s}px;height:${s}px" src="${u.avatar}" alt="">`
+  : `<span class="av" style="width:${s}px;height:${s}px;font-size:${s / 2.2}px">${esc(((u && u.username) || '?')[0].toUpperCase())}</span>`);
+const toast = (t) => { const d = document.createElement('div'); d.className = 'toast'; d.textContent = t; document.body.appendChild(d); setTimeout(() => d.remove(), 2200); };
+const EMOJIS = ['😀','😃','😄','😁','😆','😅','🤣','😂','🙂','🙃','😉','😊','🥰','😍','🤩','😘','😗','😚','😋','😛','😜','🤪','😝','🤗','🤭','🤫','🤔','😐','😑','😶','🙄','😏','😒','🙁','😔','😟','😕','🙁','☹️','😣','😖','😫','😩','😢','😭','😤','😠','😡','🤬','🤯','😳','😱','😨','😰','😥','😓','🤗','😋','😜','😝','🤪','🤨','🧐','🤓','😎','🥳','😏','😒','🙄','😬','😥','😓','😔','😕','🙁','☹️','😣','😖','😫','😩','😢','😭','😤','😠','😡','🤬','🤯','😳','😱','😨','😰','😥','😓','😭','😂','🤣','😊','😍','😘','🥰','😎','🤩','🥳','😉','🙂','🤗','🤭','🤫','🤔','😐','😑','😶','😏','😒','🙄','😬','🤨','🧐','🤓','😎','🥳'];
+function openEmojiPicker(insertIntoId) {
+  const items = EMOJIS.map((e) => `<button onclick="insertEmoji('${insertIntoId}','${e}')" style="font-size:1.5rem;padding:.2rem;border-radius:6px">${e}</button>`).join('');
+  modal(`<h3>Escolha um emoji</h3><div style="display:flex;flex-wrap:wrap;gap:.4rem;justify-content:center">${items}</div><button class="gh" onclick="closeM()">Fechar</button>`);
+}
+function insertEmoji(inputId, emoji) {
+  const el = document.getElementById(inputId);
+  if (!el) return;
+  const start = el.selectionStart || 0;
+  const end = el.selectionEnd || 0;
+  const val = el.value;
+  el.value = val.slice(0, start) + emoji + val.slice(end);
+  el.selectionStart = el.selectionEnd = start + emoji.length;
+  el.focus();
+}
+const RL = { none: 'Seguir', ok: 'Seguindo', pending: 'Solicitado' };
+
+/* ---------- ícones ---------- */
+const IC = {
+  home: '<path d="M3 11.2 12 3l9 8.2V20a1 1 0 0 1-1 1h-5v-6.5H9V21H4a1 1 0 0 1-1-1z"/>',
+  reels: '<rect x="3" y="3" width="18" height="18" rx="5"/><path d="M3.5 8.5h17M9 3.2l3 5.3M15 3.2l3 5.3"/><path d="M10.5 12.3v5l4.3-2.5z" fill="currentColor"/>',
+  send: '<path d="M21.5 3 10.2 14.3"/><path d="M21.5 3l-6.8 18-4.5-6.7L3.5 9.8z"/>',
+  search: '<circle cx="11" cy="11" r="7"/><path d="m20.5 20.5-4.6-4.6"/>',
+  eye: '<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+  heart: '<path d="M12 20.8S3.5 15.7 3.5 9.4A4.7 4.7 0 0 1 12 6.8a4.7 4.7 0 0 1 8.5 2.6c0 6.3-8.5 11.4-8.5 11.4z"/>',
+  plus: '<path d="M12 4.5v15M4.5 12h15"/>',
+  menu: '<path d="M4 6h16M4 12h16M4 18h16"/>',
+  comment: '<path d="M20.8 11.6a8.6 8.6 0 0 1-12.4 7.7L3.5 20.5l1.3-4.5a8.6 8.6 0 1 1 16-4.4z"/>',
+  repost: '<path d="m17 2.5 3.5 3.5L17 9.5"/><path d="M3.5 11V9.5A3.5 3.5 0 0 1 7 6h13.5"/><path d="m7 21.5-3.5-3.5L7 14.5"/><path d="M20.5 13v1.5A3.5 3.5 0 0 1 17 18H3.5"/>',
+  grid: '<rect x="3.5" y="3.5" width="7" height="7" rx="1"/><rect x="13.5" y="3.5" width="7" height="7" rx="1"/><rect x="3.5" y="13.5" width="7" height="7" rx="1"/><rect x="13.5" y="13.5" width="7" height="7" rx="1"/>',
+  tag: '<rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="12" cy="10" r="3"/><path d="M6.5 19c.8-2.8 3-4.2 5.5-4.2s4.7 1.4 5.5 4.2"/>',
+  user: '<circle cx="12" cy="8" r="4"/><path d="M4 21c1-4.2 4.2-6 8-6s7 1.8 8 6"/>',
+  dots: '<circle cx="5" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="19" cy="12" r="1.5" fill="currentColor"/>',
+  x: '<path d="M5 5l14 14M19 5 5 19"/>',
+  play: '<path d="M7 4.5v15l12-7.5z" fill="currentColor"/>',
+  pause: '<rect x="6" y="5" width="4" height="14" rx="1.2" fill="currentColor"/><rect x="14" y="5" width="4" height="14" rx="1.2" fill="currentColor"/>',
+  voloff: '<path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5z" fill="currentColor"/><path d="m16 9.5 5 5M21 9.5l-5 5"/>',
+  volon: '<path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5z" fill="currentColor"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/>',
+  camera: '<path d="M4 8.5A2.5 2.5 0 0 1 6.5 6H8l1.3-2h5.4L16 6h1.5A2.5 2.5 0 0 1 20 8.5v9a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17.5z"/><circle cx="12" cy="12.5" r="3.6"/>',
+  compass: '<circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/>',
+  shield: '<path d="M12 3l7 3v5c0 5-3.2 8.6-7 10-3.8-1.4-7-5-7-10V6z"/><path d="m9 12 2.2 2.2L15 10"/>',
+  logout: '<path d="M9 4H5.5A1.5 1.5 0 0 0 4 5.5v13A1.5 1.5 0 0 0 5.5 20H9"/><path d="M16 8l4 4-4 4M20 12H9"/>',
+  trash: '<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></path>',
+  expand: '<path d="M8 3H5a2 2 0 0 0-2 2v3M21 3h-3a2 2 0 0 0-2 2v3M3 16v3a2 2 0 0 0 2 2h3M21 16h-3a2 2 0 0 0-2-2v-3"/></path>',
+  music: '<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>',
+  smile: '<circle cx="12" cy="12" r="10"/><path d="M10 15c.4 0 .8-.1 1.2-.3l1.5-1.5c.6-.6 1.5-.6 2.1 0l1.5 1.5c.3.1.7.3 1.2.3"/><circle cx="9.5" cy="9.5" r="1.5"/><circle cx="14.5" cy="9.5" r="1.5"/>',
+  download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>',
+  lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+};
+const I = (n, s = 24) => `<svg class="ic" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${IC[n]}</svg>`;
+const media = (p, full) => (p.type === 'video'
+  ? `<video src="${p.media}" ${full ? 'controls' : 'loop muted data-auto="feed" onclick="togglePlay(this)" onplay="vpPlay(this)" onpause="vpPause(this)"'} playsinline preload="metadata"></video>${full ? '' : `<div class="pp">${I('play', 34)}</div>${volCtl('feed')}`}`
+  : `<img src="${p.media}" alt="">`);
+
+async function api(url, o = {}) {
+  o.headers = { ...(o.headers || {}), Authorization: 'Bearer ' + token };
+  if (o.json) { o.body = JSON.stringify(o.json); o.headers['Content-Type'] = 'application/json'; o.method = o.method || 'POST'; }
+  const r = await fetch(url, o), d = await r.json();
+  if (r.status === 401 && token) logout();
+  if (!r.ok) throw new Error(d.error || 'Algo deu errado.');
+  return d;
+}
+
+// ---- Gerenciamento de múltiplas contas ----
+function getSavedAccounts() {
+  try { return JSON.parse(localStorage.getItem('anarchy_accounts') || '[]'); } catch { return []; }
+}
+function saveAccount(tokenVal, usernameVal, nameVal, avatarVal, verifiedVal) {
+  const accounts = getSavedAccounts();
+  const existing = accounts.find(a => a.username === usernameVal);
+  const account = { token: tokenVal, username: usernameVal, name: nameVal, avatar: avatarVal, verified: verifiedVal, lastUsed: Date.now() };
+  if (existing) Object.assign(existing, account);
+  else accounts.push(account);
+  localStorage.setItem('anarchy_accounts', JSON.stringify(accounts));
+}
+function removeAccount(usernameVal) {
+  const accounts = getSavedAccounts().filter(a => a.username !== usernameVal);
+  localStorage.setItem('anarchy_accounts', JSON.stringify(accounts));
+  if (localStorage.getItem('anarchy_current') === usernameVal) localStorage.removeItem('anarchy_current');
+}
+function switchAccount(usernameVal) {
+  const accounts = getSavedAccounts();
+  const acc = accounts.find(a => a.username === usernameVal);
+  if (acc) {
+    localStorage.setItem('token', acc.token);
+    localStorage.setItem('anarchy_current', acc.username);
+    location.reload();
+  }
+}
+
+async function auth(k) {
+  try {
+    const r = await fetch('/api/' + k, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: $('u').value.trim(), password: $('p').value }) });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error);
+    token = localStorage.token = d.token;
+    // Salva a conta automaticamente
+    try { const me2 = await api('/api/me'); saveAccount(d.token, me2.username, me2.name, me2.avatar, me2.verified); } catch {}
+    start();
+  } catch (e) { $('aerr').textContent = e.message; }
+}
+function logout() {
+  localStorage.removeItem('token');
+  localStorage.removeItem('anarchy_current');
+  location.reload();
+}
+async function start() {
+  try { me = await api('/api/me'); } catch { return; }
+  $('auth').classList.add('hide'); $('app').classList.remove('hide');
+  renderSide();
+  sock = io({ auth: { token } });
+  sock.on('msg', (m) => {
+    const other = m.from_id === me.id ? m.to_id : m.from_id;
+    if (view === 'chats' && peer && (m.from_id === peer.id || m.to_id === peer.id)) {
+      if (!document.querySelector('#msgs [data-mid="' + m.id + '"]')) addMsg(m); // o servidor devolve a mensagem já com o ID real — sem duplicar mídia
+      if ($('cl') && !chatUsers.some((u) => u.id === other)) loadChatList();
+    } else {
+      if (m.to_id === me.id) { unread++; badges(); }
+      if (view === 'chats' && $('cl') && !chatUsers.some((u) => u.id === other)) loadChatList();
+    }
+  });
+  sock.on('story_view', ({ story_id }) => {
+    const g = G.find((x) => x.items.some((i) => i.id === story_id));
+    const it = g && g.items.find((i) => i.id === story_id);
+    if (it) it.views = (it.views || 0) + 1;
+    if (stSid === story_id) {
+      const c = $('svc'), l = $('svl');
+      if (c && it) { c.textContent = it.views; if (l) l.textContent = it.views === 1 ? 'visualização' : 'visualizações'; }
+    }
+  });
+  sock.on('notif', () => { badges(); if (panel === 'notifs') loadNotifs(); });
+  badges();
+  const h = location.hash;
+  h.startsWith('#@') ? go('profile', h.slice(2)) : go('home');
+}
+
+/* ---------- barra lateral ---------- */
+function renderSide() {
+  const items = [
+    ['home', 'home', 'Página inicial'], ['reels', 'reels', 'Reels'], ['chats', 'send', 'Mensagens', 'bd-m'],
+  ];
+  const nv = ([v, ic, t, b]) => `<button class="nv" data-v="${v}" onclick="go('${v}')"><i class="ii">${I(ic, 26)}${b ? `<em class="bd hide" id="${b}"></em>` : ''}</i><span>${t}</span></button>`;
+  $('side').innerHTML = `<button class="lw" onclick="go('home')" aria-label="Início"><img src="/logo_anarchy.png" alt="" style="width:34px;height:34px;border-radius:0;"><span class="lt">Anarchy</span></button>
+    ${items.map(nv).join('')}
+    <button class="nv" data-p="search" onclick="togglePanel('search')"><i class="ii">${I('search', 26)}</i><span>Pesquisa</span></button>
+    <button class="nv" data-p="notifs" onclick="togglePanel('notifs')"><i class="ii">${I('heart', 26)}<em class="bd hide" id="bd-n"></em></i><span>Notificações</span></button>
+    <button class="nv" onclick="newPost()"><i class="ii">${I('plus', 26)}</i><span>Criar</span></button>
+    <button class="nv" data-v="profile" onclick="go('profile',me.username)"><i class="ii">${av(me, 26)}</i><span>Perfil</span></button>
+    <button class="nv sp" data-more="1" onclick="toggleMore(event)"><i class="ii">${I('menu', 26)}</i><span>Mais</span></button>`;
+  $('pill').innerHTML = `<i class="ii" style="position:relative">${I('send', 24)}<em class="bd hide" id="bd-p"></em></i>Mensagens${av(me, 28)}`;
+  markNav(); badges(true);
+}
+function markNav() {
+  document.querySelectorAll('.nv').forEach((b) => b.classList.toggle('on', panel ? b.dataset.p === panel : b.dataset.v === view));
+}
+async function badges(local) {
+  const set = (id, n) => { const e = $(id); if (!e) return; e.textContent = n > 9 ? '9+' : n; e.classList.toggle('hide', !n); };
+  set('bd-m', unread); set('bd-p', unread);
+  if (local) return;
+  try { set('bd-n', (await api('/api/notifs/count')).n); } catch {}
+}
+
+function go(v, arg) {
+  view = v; if (au) au.pause(); dmReset(); chatLoadId++; peer = null; if (v !== 'chats') pendingPeer = null;
+  if (v === 'chats') { unread = 0; badges(true); }
+  closePanel(true); closeMore(true); closeM(true); closeS(true);
+  const el = $('view'); el.className = ''; void el.offsetWidth; el.className = 'fx';
+  $('pill').classList.toggle('hide', v === 'chats');
+  markNav(); window.scrollTo(0, 0);
+  if (v === 'profile') history.replaceState(null, '', '#@' + (arg || me.username)); else if (location.hash) history.replaceState(null, '', location.pathname);
+  ({ home, explore, chats, profile, reels }[v])(arg);
+}
+
+/* ---------- painéis e menu ---------- */
+function togglePanel(k) { panel === k ? closePanel() : openPanel(k); }
+function openPanel(k) {
+  closePanel(true); closeMore(true); panel = k; document.body.classList.add('pn');
+  const d = document.createElement('div'); d.id = 'panel'; document.body.appendChild(d);
+  if (k === 'notifs') { d.innerHTML = '<h2>Notificações</h2><div class="chips"></div><div id="nl"><div class="sk" style="height:60px;margin:.5rem 1.4rem"></div><div class="sk" style="height:60px;margin:.5rem 1.4rem"></div><div class="sk" style="height:60px;margin:.5rem 1.4rem"></div></div>'; loadNotifs(true); }
+  else {
+    d.innerHTML = '<h2>Pesquisa</h2><div style="padding:0 1.4rem .8rem"><input id="sq" placeholder="Pesquisar pessoas" autocomplete="off" oninput="search(this.value)"></div><div class="sres" id="sres"><p class="empty">Digite um nome ou @usuário.</p></div><div style="padding:0 1.4rem"><button class="lnk" onclick="go(\'explore\')">Explorar publicações →</button></div>';
+    setTimeout(() => $('sq') && $('sq').focus(), 250);
+  }
+  markNav();
+}
+function closePanel(now) {
+  const d = $('panel'); panel = null; document.body.classList.remove('pn'); markNav();
+  if (!d) return; d.removeAttribute('id');
+  if (now) return d.remove();
+  d.classList.add('out'); setTimeout(() => d.remove(), 200);
+}
+function toggleMore(e) {
+  e.stopPropagation();
+  if ($('more')) return closeMore();
+  closePanel(true);
+  const d = document.createElement('div'); d.id = 'more';
+  d.innerHTML = `<button onclick="go('explore')">${I('compass', 22)}Explorar</button>
+    <button onclick="verify();closeMore()">${I('shield', 22)}${me.verified ? 'Cancelar Verificado' : 'Obter Verificado grátis'}</button>
+    <button onclick="logout()">${I('logout', 22)}Sair</button>`;
+  document.body.appendChild(d);
+}
+function closeMore(now) {
+  const d = $('more'); if (!d) return; d.removeAttribute('id');
+  if (now) return d.remove();
+  d.classList.add('out'); setTimeout(() => d.remove(), 150);
+}
+document.addEventListener('mousedown', (e) => {
+  if ($('more') && !e.target.closest('#more')) closeMore();
+  if (panel && !e.target.closest('#panel') && !e.target.closest('#side') && !e.target.closest('.ov')) closePanel();
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') { if ($('m')) closeM(); else if ($('sv')) closeS(); else if ($('more')) closeMore(); else if (panel) closePanel(); }
+  if ($('sv') && !$('m') && e.target.tagName !== 'INPUT') { if (e.key === 'ArrowRight') $('sv').querySelector('.tr').click(); if (e.key === 'ArrowLeft') $('sv').querySelector('.tl').click(); }
+});
+
+/* ---------- notificações ---------- */
+const NT = { follow: 'começou a seguir você.', request: 'pediu para seguir você.', like: 'curtiu sua publicação.', comment: 'comentou na sua publicação.', repost: 'republicou sua publicação.', tag: 'marcou você em uma publicação.', mention: 'mencionou você em um comentário.', story_mention: 'mencionou você em um story.', story_reply: 'respondeu ao seu story.' };
+const NF = { all: ['Tudo', null], follow: ['Seguidores', ['follow', 'request']], like: ['Curtidas', ['like']], comment: ['Comentários', ['comment', 'mention']], tag: ['Marcações', ['tag', 'repost', 'story_mention']] };
+async function loadNotifs(first) {
+  try { nfAll = await api('/api/notifs'); } catch { return; }
+  if (panel !== 'notifs') return;
+  renderNotifs(first);
+  if (nfAll.some((n) => !n.seen)) { await api('/api/notifs/read', { method: 'POST' }); const b = $('bd-n'); if (b) b.classList.add('hide'); }
+}
+function renderNotifs(anim) {
+  const d = $('panel'); if (!d || panel !== 'notifs') return;
+  d.querySelector('.chips').innerHTML = Object.entries(NF).map(([k, [t]]) => `<button class="chip ${nfFilter === k ? 'on' : ''}" onclick="nfFilter='${k}';renderNotifs(true)">${t}</button>`).join('');
+  const f = NF[nfFilter][1], list = nfAll.filter((n) => !f || f.includes(n.type));
+  const now = Date.now(), groups = [['Hoje', (n) => now - n.created < 864e5], ['Esta semana', (n) => now - n.created < 6048e5], ['Anteriores', () => true]];
+  let left = list, html = '', i = 0;
+  groups.forEach(([t, fn]) => {
+    const g = left.filter(fn); left = left.filter((n) => !fn(n)); if (!g.length) return;
+    html += `<h4>${t}</h4>` + g.map((n) => {
+      const act = n.type === 'request'
+        ? `<button class="bl" onclick="event.stopPropagation();nreq(${n.uid},'accept')">Aceitar</button><button class="gh" onclick="event.stopPropagation();nreq(${n.uid},'decline')">Recusar</button>`
+        : n.type === 'follow' ? `<button class="${n.rel === 'none' ? 'bl' : 'gh'}" onclick="event.stopPropagation();nfollow(${n.uid},this)">${n.rel === 'none' ? 'Seguir de volta' : RL[n.rel]}</button>`
+        : n.media ? (n.ptype === 'video' ? `<video class="th" src="${n.media}#t=0.1" muted preload="metadata"></video>` : `<img class="th" src="${n.media}" alt="">`) : '';
+      const click = n.post_id && n.type !== 'follow' && n.type !== 'story_view' ? `openPostById(${n.post_id})` : `go('profile','${n.username}')`;
+      const storyPrev = n.media ? (n.ptype === 'video' ? `<video class="sp" src="${n.media}#t=0.1" muted preload="metadata"></video>` : `<img class="sp" src="${n.media}" alt="">`) : '';
+      const bubble = n.type === 'story_reply' && n.text ? `<div class="sb"><div class="st">${esc(n.text)}</div></div>` : '';
+      return `<div class="nt ${n.seen ? '' : 'new'}" style="--i:${i++};${anim ? 'animation:rise .4s var(--ease) both;animation-delay:' + Math.min(i, 12) * 40 + 'ms' : ''}" onclick="${click}">${av(n, 44)}
+        <div class="tx"><b>${esc(n.username)}</b>${vf(n.verified)} ${NT[n.type] || ''} <small>${rt(n.created)}</small>
+        ${bubble ? `<div class="sw">${storyPrev}${bubble}</div>` : ''}</div>${act}</div>`;
+    }).join('');
+  });
+  $('nl').innerHTML = html || `<p class="empty">${nfFilter === 'all' ? 'Nenhuma notificação ainda.' : 'Nada por aqui.'}</p>`;
+}
+async function nfollow(id, b) { const r = await api('/api/follow/' + id, { method: 'POST' }); b.textContent = r.status === 'none' ? 'Seguir de volta' : RL[r.status]; b.className = r.status === 'none' ? 'bl' : 'gh'; }
+async function nreq(id, a) { await api(`/api/requests/${id}/${a}`, { method: 'POST' }); loadNotifs(); }
+async function openPostById(id) { try { const p = await api('/api/post/' + id); P[id] = p; closePanel(); openPost(id); } catch (e) { toast(e.message); } }
+
+/* ---------- Confirmação (centralizada, no estilo do site) ---------- */
+function ask(msg, yes = 'Sim', no = 'Voltar') {
+  return new Promise((resolve) => {
+    const d = document.createElement('div'); d.id = 'ask'; d.className = 'ov';
+    d.innerHTML = `<div class="box askb" role="alertdialog" aria-modal="true"><p>${esc(msg)}</p><div class="row"><button class="gh" data-a="0">${esc(no)}</button><button class="bl dg" data-a="1">${esc(yes)}</button></div></div>`;
+    document.body.appendChild(d);
+    const yesBtn = d.querySelector('.dg'); yesBtn.focus();
+    let done = false;
+    const end = (v) => { if (done) return; done = true; document.removeEventListener('keydown', key, true); d.classList.add('out'); setTimeout(() => d.remove(), 200); resolve(v); };
+    const key = (e) => {
+      if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); end(false); }
+      else if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); end(document.activeElement === d.querySelector('.gh') ? false : true); }
+      else if (e.key === 'Tab') { e.preventDefault(); const bs = [...d.querySelectorAll('button')], i = bs.indexOf(document.activeElement); bs[(i + 1) % bs.length].focus(); }
+      else e.stopPropagation();
+    };
+    document.addEventListener('keydown', key, true);
+    d.onmousedown = (e) => { if (e.target === d) end(false); };
+    d.querySelectorAll('button').forEach((b) => { b.onclick = () => end(b.dataset.a === '1'); });
+  });
+}
+
+/* ---------- Caixa de diálogo com input (prompt centralizada) ---------- */
+function promptBox(title = '', placeholder = '', value = '') {
+  return new Promise((resolve) => {
+    const d = document.createElement('div'); d.id = 'prompt'; d.className = 'ov';
+    d.innerHTML = `<div class="box askb" role="dialog" aria-modal="true">
+      <p style="margin:0 0 1rem;font-weight:700">${esc(title)}</p>
+      <input type="text" id="promptInput" placeholder="${esc(placeholder)}" value="${esc(value)}" style="width:100%;padding:.65rem .85rem;border:1px solid var(--line);border-radius:10px;background:var(--soft);margin-bottom:1rem">
+      <div class="row"><button class="gh" data-a="0">Cancelar</button><button class="bl dg" data-a="1">OK</button></div>
+    </div>`;
+    document.body.appendChild(d);
+    const input = d.querySelector('#promptInput'); input.focus();
+    let done = false;
+    const end = (v) => { if (done) return; done = true; document.removeEventListener('keydown', key, true); d.classList.add('out'); setTimeout(() => d.remove(), 200); resolve(v); };
+    const key = (e) => {
+      if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); end(null); }
+      else if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); end(input.value); }
+      else if (e.key === 'Tab') { e.preventDefault(); const bs = [...d.querySelectorAll('button')], i = bs.indexOf(document.activeElement); bs[(i + 1) % bs.length].focus(); }
+      else e.stopPropagation();
+    };
+    document.addEventListener('keydown', key, true);
+    d.onmousedown = (e) => { if (e.target === d) end(null); };
+    d.querySelectorAll('button').forEach((b) => { b.onclick = () => end(b.dataset.a === '1' ? input.value : null); });
+  });
+}
+
+/* ---------- Trocar de conta ---------- */
+function switchAccountUI() {
+  const accounts = getSavedAccounts();
+  const currentUser = localStorage.getItem('anarchy_current') || me.username;
+  const itemsHtml = accounts.map(acc => {
+    const isCurrent = acc.username === currentUser;
+    return `<div style="display:flex;align-items:center;gap:.8rem;padding:.7rem 1rem;border-radius:12px;background:${isCurrent ? 'var(--soft)' : 'transparent'};border:${isCurrent ? '2px solid var(--blue)' : '1px solid var(--line)'};margin-bottom:.5rem;cursor:pointer" onclick="switchAccount('${esc(acc.username)}')">
+      <div class="av" style="width:34px;height:34px">${av(acc, 34).replace(/width:\d+px/, 'width:34px').replace(/height:\d+px/, 'height:34px')}</div>
+      <div><b style="display:block">${esc(acc.username)}</b><small style="color:var(--mute)">${isCurrent ? 'Conta atual' : acc.name || ''}</small></div>
+      <div style="margin-left:auto"><button class="bl dg" style="padding:.2rem .6rem;font-size:.8rem">${isCurrent ? 'Selecionada' : 'Usar'}</button></div>
+      <button class="gh" style="padding:.2rem .4rem;font-size:.8rem;color:var(--red)" onclick="event.stopPropagation(); removeAccountUI('${esc(acc.username)}')">Excluir</button>
+    </div>`;
+  }).join('') || '<div style="padding:1rem;color:var(--mute);text-align:center">Nenhuma conta salva ainda.</div>';
+
+  const d = document.createElement('div'); d.id = 'switchAcc'; d.className = 'ov';
+  d.innerHTML = `<div class="box" style="width:min(460px,92vw);max-width:460px;padding:0;background:var(--soft);border-radius:16px">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:1rem 1.2rem;border-bottom:1px solid var(--line)">
+      <h3 style="margin:0;font-size:1.1rem">Trocar de conta</h3>
+      <button class="ib" onclick="document.getElementById('switchAcc').remove()">${I('x', 20)}</button>
+    </div>
+    <div style="padding:1rem 1.2rem">
+      <div style="margin-bottom:1rem">${itemsHtml}</div>
+      <div style="margin-top:.5rem">
+        <button class="lnk" style="color:var(--blue);font-weight:700;width:100%;text-align:left;padding:.5rem 0" onclick="document.getElementById('switchAcc').remove();logout()">Entrar em uma já conta existente</button>
+      </div>
+    </div>
+    <div style="padding:0 1.2rem 1rem">
+      <div style="font-size:.7rem;color:var(--mute);padding:.4rem 1rem">Clique em uma conta para alternar rapidamente entre elas.</div>
+    </div>
+  </div>`;
+  document.body.appendChild(d);
+  d.onmousedown = (e) => { if (e.target === d) d.remove(); };
+}
+
+function removeAccountUI(usernameVal) {
+  removeAccount(usernameVal);
+  const el = document.getElementById('switchAcc');
+  if (el) el.remove();
+  switchAccountUI();
+}
+
+/* ---------- Avatar Cropper ---------- */
+const AC = { file: null, img: null, x: 0, y: 0, scale: 1, rotating: false };
+
+function openAvatarCropper(input) {
+  const f = input.files[0]; if (!f) return;
+  AC.file = f;
+  const url = URL.createObjectURL(f);
+  AC.img = new Image(); AC.img.src = url;
+  AC.img.onload = () => { AC.x = 0; AC.y = 0; AC.scale = 1; renderCropper(); };
+}
+
+function renderCropper() {
+  const html = `<div class="ov" id="cropperOverlay" style="display:flex;align-items:center;justify-content:center">
+    <div style="background:var(--soft);border-radius:16px;padding:1rem;max-width:90vw;max-height:90vh;overflow:auto;display:flex;flex-direction:column;align-items:center">
+      <div style="margin-bottom:.7rem"><h3 style="margin:0 0 .3rem">Ajustar foto de perfil</h3><small style="color:var(--mute)">Arraste para posicionar • Role para zoom</small></div>
+      <div style="position:relative;width:200px;height:200px;border-radius:50%;overflow:hidden;border:3px solid var(--line);box-shadow:0 0 20px rgba(255,45,45,.4);cursor:grab">
+        <img id="cropImg" src="${AC.img.src}" style="position:absolute;top:${AC.y}px;left:${AC.x}px;transform:scale(${AC.scale});transform-origin:center;max-width:none;cursor:grab;user-select:none">
+      </div>
+      <div style="display:flex;gap:.5rem;margin:.5rem 0">
+        <button class="gh" onclick="AC.scale=Math.max(.5,AC.scale-.1);renderCropper()">−</button>
+        <button class="bl" onclick="AC.scale=Math.min(3,AC.scale+.1);renderCropper()">+</button>
+      </div>
+      <div class="row" style="margin-top:.5rem">
+        <button class="gh" onclick="closeCropper()">Cancelar</button>
+        <button class="bl" onclick="applyAvatarCrop()">Aplicar</button>
+      </div>
+    </div>
+  </div>`;
+  const tmp = document.createElement('div'); tmp.innerHTML = html;
+  document.body.appendChild(tmp.firstElementChild);
+  const cImg = document.getElementById('cropImg');
+  const container = cImg.parentElement;
+  let isDragging = false, startX = 0, startY = 0, startCX = 0, startCY = 0;
+  
+  const startDrag = (e) => {
+    isDragging = true;
+    startX = e.clientX || (e.touches && e.touches[0].clientX);
+    startY = e.clientY || (e.touches && e.touches[0].clientY);
+    startCX = AC.x;
+    startCY = AC.y;
+    container.style.cursor = 'grabbing';
+    cImg.style.cursor = 'grabbing';
+    e.preventDefault();
+  };
+  
+  const doDrag = (e) => {
+    if (!isDragging) return;
+    const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+    const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+    AC.x = startCX + (clientX - startX);
+    AC.y = startCY + (clientY - startY);
+    cImg.style.left = AC.x + 'px';
+    cImg.style.top = AC.y + 'px';
+    e.preventDefault();
+  };
+  
+  const endDrag = () => {
+    isDragging = false;
+    container.style.cursor = 'grab';
+    cImg.style.cursor = 'grab';
+  };
+
+  cImg.addEventListener('mousedown', startDrag);
+  cImg.addEventListener('touchstart', startDrag, { passive: false });
+  cImg.addEventListener('mousemove', doDrag);
+  cImg.addEventListener('touchmove', doDrag, { passive: false });
+  cImg.addEventListener('mouseup', endDrag);
+  cImg.addEventListener('touchend', endDrag);
+  cImg.addEventListener('mouseleave', endDrag);
+  cImg.addEventListener('wheel', e => { e.preventDefault(); const zoom = e.deltaY > 0 ? .9 : 1.1; AC.scale = Math.min(3, Math.max(.5, AC.scale * zoom)); cImg.style.transform = `scale(${AC.scale})`; }, { passive: false });
+}
+
+function closeCropper() {
+  const el = document.getElementById('cropperOverlay'); if (el) el.remove();
+  AC.file = null; AC.img = null;
+}
+
+function applyAvatarCrop() {
+  const cImg = document.getElementById('cropImg'); if (!cImg || !AC.file) return;
+  const canvas = document.createElement('canvas'); canvas.width = 200; canvas.height = 200;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, 200, 200);
+  const drawScale = 200 / AC.scale;
+  const drawX = -AC.x / AC.scale;
+  const drawY = -AC.y / AC.scale;
+  ctx.drawImage(AC.img, drawX, drawY, AC.img.width / AC.scale, AC.img.height / AC.scale, drawX, drawY, AC.img.width / AC.scale, AC.img.height / AC.scale);
+  ctx.globalCompositeOperation = 'destination-in';
+  ctx.beginPath(); ctx.arc(100, 100, 100, 0, Math.PI * 2); ctx.fill();
+  const croppedDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+  closeCropper();
+  const input = document.getElementById('ea');
+  const blob = dataURLtoBlob(croppedDataUrl);
+  const file = new File([blob], AC.file.name, { type: 'image/jpeg', lastModified: Date.now() });
+  const dt = new DataTransfer(); dt.items.add(file);
+  input.files = dt.files;
+  const preview = document.getElementById('eaPreview'); if (preview) preview.innerHTML = `<img src="${croppedDataUrl}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:2px solid var(--blue)">`;
+  toast('Foto ajustada');
+}
+
+function dataURLtoBlob(dataurl) {
+  const arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1], bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
+  for (let i = 0; i < n; i++) u8arr[i] = bstr.charCodeAt(i);
+  return new Blob([u8arr], { type: mime });
+}
+
+/* ---------- Janela (modal) ---------- */
+function modal(h, cls = '') {
+  closeM(true);
+  const d = document.createElement('div'); d.id = 'm'; d.className = 'ov';
+  d.onmousedown = (e) => { if (e.target === d) closeM(); };
+  d.innerHTML = `<div class="box ${cls}">${h}</div>`; document.body.appendChild(d);
+}
+function closeM(now) {
+  const d = $('m'); if (!d) return; d.removeAttribute('id');
+  if (now) return d.remove();
+  d.classList.add('out'); setTimeout(() => d.remove(), 200); resumeBehind(); storyResume();
+}
+let pausedByModal = [];
+function pauseBehind() { pausedByModal = [...document.querySelectorAll('video[data-auto]')].filter((v) => !v.paused); pausedByModal.forEach(autoPause); }
+function resumeBehind() { if ($('m')) return; pausedByModal.forEach((v) => { if (v.isConnected) v.play().catch(() => {}); }); pausedByModal = []; }
+function openPost(id, focus) { pauseBehind(); modal(postDetail(P[id]), 'wide'); watch(); if (focus) setTimeout(() => { const i = document.querySelector('#m .pin input'); if (i) i.focus(); }, 300); }
+
+/* ---------- Posts ---------- */
+const acts = (p) => `<button class="ab lk ${p.liked ? 'on' : ''} ${JL === p.id ? 'pop' : ''}" onclick="like(${p.id})" title="Curtir">${I('heart', 26)}${p.likes ? `<span>${p.likes}</span>` : ''}</button>
+  <button class="ab" onclick="cmtBtn(${p.id},this)" title="Comentar">${I('comment', 25)}${p.ncomments ? `<span>${p.ncomments}</span>` : ''}</button>
+  <button class="ab" onclick="repost(${p.id})" title="Republicar">${I('repost', 25)}${p.reposts ? `<span>${p.reposts}</span>` : ''}</button>
+  <button class="ab" onclick="share(${p.id})" title="Enviar">${I('send', 24)}</button>`;
+const likesTxt = (p) => `${p.likes} curtida${p.likes === 1 ? '' : 's'}`;
+const tagsLine = (p) => (p.tags && p.tags.length ? `<p class="tg"><small>com</small> ${p.tags.map((t) => `<a onclick="go('profile','${t}')">@${esc(t)}</a>`).join('')}</p>` : '');
+const cmts = (p, full) => {
+  const list = full ? p.comments : p.comments.slice(-2);
+  return (!full && p.ncomments > 2 ? `<span class="more" onclick="openPost(${p.id})">Ver todos os ${p.ncomments} comentários</span>` : '')
+    + list.map((c) => `<p data-cid="${c.id}"><b>${esc(c.username)}</b>${vf(c.verified)} <span class="ct">${linkify(esc(c.text))}</span>${c.edited_at ? ' <small class="ed" style="color:var(--mute)">editado</small>' : ''}
+      ${c.user_id === me.id ? `<button class="gh" onclick="editComment(${p.id},${c.id},this)" style="font-size:.7rem;padding:.15rem .5rem;border-radius:6px;margin-left:.4rem">Editar</button><button class="gh" onclick="deleteComment(${p.id},${c.id})" style="font-size:.7rem;padding:.15rem .5rem;border-radius:6px;margin-left:.3rem">Excluir</button>` : ''}</p>`).join('');
+};
+function postCard(p, i = 0) {
+  P[p.id] = p;
+  return `<article class="post" id="p${p.id}" style="--i:${i}">
+  <div class="ph"><a onclick="go('profile','${p.username}')">${av(p, 36)}</a>
+    <div class="who"><b onclick="go('profile','${p.username}')">${esc(p.username)}</b>${vf(p.verified)}<small> • ${rt(p.created)}</small>
+    ${p.orig ? `<div class="ro">↻ republicado de @${esc(p.orig)}</div>` : ''}</div>
+    <button class="mo" onclick="postMenu(${p.id})" aria-label="Mais">${I('dots', 22)}</button></div>
+  <div class="pm" ondblclick="dbl(${p.id},this)">${media(p)}</div>
+  <div class="pa" data-pa="${p.id}">${acts(p)}</div>
+  <div class="pb"><div class="pl" data-pl="${p.id}">${likesTxt(p)}</div>
+    ${tagsLine(p)}
+    ${p.caption ? `<p><b>${esc(p.username)}</b> ${linkify(esc(p.caption))}</p>` : ''}
+    ${p.song_preview ? `<div class="song" style="margin:.4rem 0"><button onclick="au&&au.src==='${esc(p.song_preview)}'&&!au.paused?au.pause():playSongPost('${esc(p.song_preview)}',${p.id})" aria-label="Tocar prévia">▶</button><input type="range" min="0" max="${p.song_duration || 30}" value="0" style="width:110px;margin-left:.4rem"><small style="color:var(--mute)">Prévia da música</small></div>` : ''}
+    <div data-cl="${p.id}">${cmts(p)}</div>
+    <input placeholder="Adicione um comentário..." maxlength="300" onkeydown="if(event.key==='Enter')cmt(${p.id},this)"><button type="button" onclick="openEmojiPicker('cmt-${p.id}')" title="Emoji">${I('smile', 16)}</button></div></article>`;
+}
+function postDetail(p) {
+  P[p.id] = p;
+  const fullscreenBtn = p.type === 'video' ? `<button class="ib" onclick="toggleFullscreenVideo()" aria-label="Tela cheia">${I('expand', 20)}</button>` : '';
+  return `<div class="pdet"><div class="pdm">${media(p, true)}</div><div class="pdr">
+    <div class="pdh">${av(p, 34)}<b onclick="go('profile','${p.username}')">${esc(p.username)}${vf(p.verified)}</b>${fullscreenBtn}<button class="ib" onclick="postMenu(${p.id})" aria-label="Mais opções" style="margin-left:auto">${I('dots', 20)}</button><button class="ib" onclick="closeM()" aria-label="Fechar">${I('x', 20)}</button></div>
+    <div class="pdc">${p.caption ? `<p><b>${esc(p.username)}</b> ${linkify(esc(p.caption))}</p>` : ''}${tagsLine(p)}
+    ${p.song_preview ? `<div class="song" style="margin:.4rem 0"><button onclick="playSongPost('${esc(p.song_preview)}',${p.id})" aria-label="Tocar prévia">▶</button><input type="range" min="0" max="${p.song_duration || 30}" value="0" style="width:110px;margin-left:.4rem"><small style="color:var(--mute)">Prévia da música</small></div>` : ''}
+    <div data-cl="${p.id}" data-full="1">${cmts(p, true) || '<small>Sem comentários ainda.</small>'}</div></div>
+    <div class="pa" data-pa="${p.id}">${acts(p)}</div><div class="pl" data-pl="${p.id}">${likesTxt(p)} · <small>${rt(p.created)}</small></div>
+    <div class="pin"><input placeholder="Adicione um comentário..." maxlength="300" onkeydown="if(event.key==='Enter')cmt(${p.id},this)"><button type="button" onclick="openEmojiPicker('cmt-${p.id}')" title="Emoji">${I('smile', 16)}</button></div></div></div>`;
+}
+function refresh(p) {
+  P[p.id] = p;
+  document.querySelectorAll(`[data-pa="${p.id}"]`).forEach((e) => { e.innerHTML = acts(p); });
+  document.querySelectorAll(`[data-pl="${p.id}"]`).forEach((e) => { e.innerHTML = e.closest('.pdr') ? `${likesTxt(p)} · <small>${rt(p.created)}</small>` : likesTxt(p); });
+  document.querySelectorAll(`[data-cl="${p.id}"]`).forEach((e) => { e.innerHTML = cmts(p, e.dataset.full === '1') || '<small>Sem comentários ainda.</small>'; });
+}
+async function reload(id) { refresh(await api('/api/post/' + id)); }
+async function like(id) { await api(`/api/posts/${id}/like`, { method: 'POST' }); JL = P[id] && !P[id].liked ? id : null; await reload(id); JL = null; }
+function dbl(id, el) {
+  if (!P[id].liked) like(id);
+  const h = document.createElement('span'); h.className = 'bh'; h.innerHTML = `<svg width="90" height="90" viewBox="0 0 24 24" fill="#fff"><path d="M12 20.8S3.5 15.7 3.5 9.4A4.7 4.7 0 0 1 12 6.8a4.7 4.7 0 0 1 8.5 2.6c0 6.3-8.5 11.4-8.5 11.4z"/></svg>`;
+  el.appendChild(h); setTimeout(() => h.remove(), 800);
+}
+function cmtBtn(id, b) { if (b.closest('.pdet')) b.closest('.pdr').querySelector('.pin input').focus(); else openPost(id, true); }
+async function cmt(id, el) { const t = el.value; if (!t.trim()) return; el.value = ''; await api(`/api/posts/${id}/comments`, { json: { text: t } }); reload(id); }
+async function repost(id) { try { await api(`/api/posts/${id}/repost`, { method: 'POST' }); toast('Republicado no seu perfil'); reload(id); } catch (e) { toast(e.message); } }
+function postMenu(id) {
+  const p = P[id];
+  const own = p.user_id === me.id;
+  modal(`${own ? `<button onclick="editPost(${id})">Editar publicação</button><button onclick="downloadMedia('post',${p.id})">Baixar mídia</button><button class="rd" onclick="deletePost(${id})">Excluir publicação</button>` : `<button onclick="go('profile','${p.username}')">Ir para o perfil</button><button onclick="blockUser(${p.user_id})">Bloquear @${esc(p.username)}</button>`}
+    <button onclick="share(${id})">Enviar para...</button><button class="rd" onclick="closeM()">Cancelar</button>`, 'sheet');
+}
+async function share(id) {
+  const us = await api('/api/chats');
+  modal(`<h3>Enviar para</h3>${us.map((u) => `<div class="rq">${av(u, 40)}<span>${esc(u.username)}</span><button class="bl" onclick="sendPost(${u.id},${id},this)">Enviar</button></div>`).join('') || '<p class="empty">Siga alguém para poder enviar posts.</p>'}`);
+}
+function sendPost(to, id, b) { sock.emit('msg', { to, post_id: id }); b.textContent = 'Enviado ✓'; b.disabled = true; }
+
+/* ---------- vídeos: autoplay ao aparecer na tela ---------- */
+const vio = new IntersectionObserver((es) => es.forEach((e) => {
+  const v = e.target;
+  if (e.isIntersecting && e.intersectionRatio >= .6 && !$('m')) { v.muted = muted; v.volume = vol; v.play().catch(() => v.parentNode.classList.add('paused')); } else autoPause(v);
+}), { threshold: [0, .6, 1] });
+function watch() { document.querySelectorAll('video[data-auto]').forEach((v) => { if (!v._w) { v._w = 1; vio.observe(v); } }); }
+function togglePlay(v) { v.paused ? v.play().catch(() => {}) : v.pause(); }
+const vpPlay = (v) => v.parentNode.classList.remove('paused');
+const vpPause = (v) => { if (v._auto) v._auto = false; else v.parentNode.classList.add('paused'); };
+const autoPause = (v) => { if (!v.paused) { v._auto = true; v.pause(); } };
+/* ---------- volume (feed, reels e stories) ---------- */
+let vol = 1, smuted = false, stManual = false;
+try { const x = parseFloat(localStorage.vol); if (x >= 0 && x <= 1) vol = x; } catch {}
+const isMuted = (k) => (k === 'story' ? smuted : muted) || vol === 0;
+const volIcon = (k) => I(isMuted(k) ? 'voloff' : 'volon', 16);
+const volCtl = (k) => `<div class="vc" data-vk="${k}" onclick="event.stopPropagation()"><input class="vsl" type="range" min="0" max="1" step="0.01" value="${isMuted(k) ? 0 : vol}" style="--p:${isMuted(k) ? 0 : vol * 100}%" oninput="setVol(this.value,'${k}')" aria-label="Volume"><button class="vb" onclick="toggleMute('${k}')" aria-label="Som">${volIcon(k)}</button></div>`;
+function applyVol() {
+  document.querySelectorAll('video[data-auto]').forEach((v) => { v.muted = muted; v.volume = vol; });
+  const sv = document.querySelector('#sv video.sm'); if (sv) { sv.muted = smuted; sv.volume = vol; }
+  document.querySelectorAll('.vc').forEach((c) => {
+    const k = c.dataset.vk, sl = c.querySelector('.vsl');
+    sl.value = isMuted(k) ? 0 : vol; sl.style.setProperty('--p', (isMuted(k) ? 0 : vol * 100) + '%');
+    c.querySelector('.vb').innerHTML = volIcon(k);
+  });
+}
+function setVol(x, k) {
+  x = +x;
+  if (x <= 0) { if (k === 'story') smuted = true; else muted = true; }
+  else { vol = x; try { localStorage.vol = x; } catch {} if (k === 'story') smuted = false; else muted = false; }
+  applyVol();
+}
+function toggleMute(k) {
+  const m = isMuted(k);
+  if (m && vol < .05) vol = .6;
+  if (k === 'story') smuted = !m; else muted = !m;
+  applyVol();
+}
+
+/* ---------- Criar ---------- */
+function newPost(mode) {
+  modal(`<h3>${mode === 'story' ? 'Novo story' : 'Criar publicação'}</h3>
+  <label class="drop" for="nf" id="pv">${I('camera', 44)}<p>Clique para escolher uma foto ou vídeo</p></label>
+  <input type="file" id="nf" class="hide" accept="image/*,video/*" onchange="prev(this)">
+  <textarea id="nc" placeholder="Legenda..." maxlength="500"></textarea>
+  <input id="nt" placeholder="Marcar pessoas: @usuario1 @usuario2" maxlength="200">
+  <div class="row" style="margin-top:.7rem"><button class="${mode === 'story' ? 'gh' : 'bl'}" onclick="sendMedia('post')">Publicar</button><button class="${mode === 'story' ? 'bl' : 'gh'}" onclick="sendMedia('story')">Postar no story</button></div><p class="err" id="ne"></p>`);
+}
+function prev(i) {
+  const f = i.files[0]; if (!f) return;
+  const u = URL.createObjectURL(f);
+  $('pv').innerHTML = f.type.startsWith('video') ? `<video src="${u}" muted autoplay loop playsinline></video>` : `<img src="${u}" alt="">`;
+}
+async function sendMedia(k) {
+  const f = $('nf').files[0]; if (!f) return ($('ne').textContent = 'Escolha uma foto ou vídeo.');
+  const fd = new FormData(); fd.append('media', f); fd.append('caption', $('nc').value); fd.append('tags', $('nt').value);
+  if (k === 'story') fd.append('mentions', $('nt').value);
+  $('ne').textContent = 'Enviando...';
+  try { await api(k === 'story' ? '/api/stories' : '/api/posts', { method: 'POST', body: fd }); go(k === 'story' ? 'home' : 'profile', me.username); }
+  catch (e) { $('ne').textContent = e.message; }
+}
+
+/* ---------- Início + Stories ---------- */
+async function home() {
+  $('view').innerHTML = `<div class="home"><div class="hc"><div class="stories" id="sts"><div class="sk" style="width:70px;height:70px;border-radius:50%"></div></div><div id="feed"><div class="sk" style="height:480px;width:min(470px,100%);margin:0 auto"></div></div></div>
+    <aside class="rc" id="rc"></aside></div>`;
+  renderRight();
+  const [st, posts] = await Promise.all([api('/api/stories'), api('/api/feed')]);
+  if (view !== 'home') return;
+  G = st;
+  renderStories();
+  $('feed').className = 'stg';
+  $('feed').innerHTML = posts.map(postCard).join('') || '<p class="empty">Seu feed está vazio. Siga pessoas em Sugestões ou publique sua primeira foto.</p>';
+  watch();
+}
+function renderStories() {
+  const el = $('sts'); if (!el) return;
+  const own = G.some((g) => g.uid === me.id);
+  el.innerHTML = `${own ? '' : `<button class="st" onclick="newPost('story')"><div class="ring seen">${av(me, 62)}</div><small>Seu story</small></button>`}
+    ${G.map((g, i) => `<button class="st" onclick="openStory(${i})"><div class="ring ${g.seen ? 'seen' : ''}">${av(g, 62)}${vf(g.verified)}</div><small>${g.uid === me.id ? 'Seu story' : esc(g.username)}</small></button>`).join('')}`;
+}
+async function renderRight() {
+  const rc = $('rc'); if (!rc) return;
+  rc.innerHTML = `<div class="acc">${av(me, 44)}<span><b onclick="go('profile',me.username)">${esc(me.username)}${vf(me.verified)}</b><small>${esc(me.name || '')}</small></span><button class="lnk" onclick="switchAccountUI()">Trocar</button></div>
+    <div class="row" style="justify-content:space-between;margin-bottom:.5rem"><b style="color:var(--mute)">Sugestões para você</b><button class="lnk" style="color:var(--ink);font-size:.8rem" onclick="allSuggest()">Ver tudo</button></div>
+    <div id="sgl"></div>
+    <div class="foot">© 2026 Anarchy</div>`;
+  try {
+    const us = await api('/api/suggestions?limit=5');
+    if ($('sgl')) $('sgl').innerHTML = us.map(sgRow).join('') || '<small>Sem sugestões por enquanto.</small>';
+  } catch {}
+}
+const sgRow = (u, i = 0) => `<div class="sg" style="animation-delay:${i * 60}ms">${av(u, 44)}<span><b onclick="go('profile','${u.username}')">${esc(u.username)}${vf(u.verified)}</b><small>${u.via ? 'Seguido(a) por ' + esc(u.via) : 'Sugestões para você'}</small></span><button class="lnk" onclick="sfollow(${u.id},this)">Seguir</button></div>`;
+async function sfollow(id, b) { const r = await api('/api/follow/' + id, { method: 'POST' }); b.textContent = RL[r.status]; b.classList.toggle('off', r.status !== 'none'); }
+async function allSuggest() {
+  const us = await api('/api/suggestions?limit=30');
+  modal(`<h3>Sugestões para você</h3>${us.map(sgRow).join('') || '<p class="empty">Sem sugestões por enquanto.</p>'}`);
+}
+
+// ---- relógio do story: imagem = 20 s; vídeo = acompanha o tempo real do vídeo ----
+const STORY_MS = 20000;
+function stopClock() { cancelAnimationFrame(stRaf); stRaf = 0; stClock = null; }
+function startClock(vid, onEnd) {
+  stopClock();
+  const c = stClock = { vid, elapsed: 0, last: performance.now(), paused: false, onEnd };
+  const tick = (now) => {
+    if (stClock !== c) return;
+    let p;
+    if (vid) p = vid.duration ? vid.currentTime / vid.duration : 0;
+    else { if (!c.paused) c.elapsed += now - c.last; p = c.elapsed / STORY_MS; }
+    c.last = now;
+    const b = $('sb'); if (b) b.style.transform = `scaleX(${Math.min(1, p)})`;
+    if (!vid && p >= 1) { stopClock(); return onEnd(); }
+    stRaf = requestAnimationFrame(tick);
+  };
+  stRaf = requestAnimationFrame(tick);
+}
+function closeS(now) {
+  stopClock(); stGi = null; stSid = null; const o = $('sv'); if (!o) return;
+  o.removeAttribute('id'); renderStories(); if (now) return o.remove();
+  o.classList.add('out'); setTimeout(() => o.remove(), 200);
+}
+const storyPrev = (gi, si) => (si > 0 ? openStory(gi, si - 1) : gi > 0 ? openStory(gi - 1, G[gi - 1].items.length - 1) : openStory(gi, 0));
+function openStory(gi, si = 0) {
+  stopClock();
+  const g = G[gi]; if (!g) return closeS();
+  const s = g.items[si]; if (!s) return openStory(gi + 1, 0);
+  const own = g.uid === me.id;
+  if (!own) viewStory(s.id); // só conta visualização de story de outra pessoa, dentro do visualizador
+  s.seen = true; g.seen = g.items.every((x) => x.seen);
+  let o = $('sv'), first = !o;
+  if (!o) { o = document.createElement('div'); o.id = 'sv'; o.className = 'ov dark'; o.onmousedown = (e) => { if (e.target === o) closeS(); }; document.body.appendChild(o); }
+  const vid = s.type === 'video';
+  stManual = false;
+  // troca de usuário: o story antigo sai deslizando e o novo entra
+  const dir = !first && stGi !== null && gi !== stGi ? (gi > stGi ? 1 : -1) : 0;
+  let ghost = null;
+  const oldBox = o.querySelector('.sbox');
+  if (dir && oldBox) {
+    const r = oldBox.getBoundingClientRect();
+    ghost = oldBox.cloneNode(true);
+    ghost.querySelectorAll('[id]').forEach((e) => e.removeAttribute('id'));
+    ghost.querySelectorAll('video').forEach((v) => { v.muted = true; v.pause(); });
+    ghost.querySelectorAll('.sm').forEach((e) => { e.style.animation = 'none'; });
+    ghost.className = 'sbox ghost ' + (dir > 0 ? 'outL' : 'outR');
+    ghost.style.cssText = `left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px`;
+  }
+  stGi = gi;
+  stSid = s.id;
+  o.innerHTML = `<div class="sbox ${first ? 'first' : dir > 0 ? 'inR' : dir < 0 ? 'inL' : ''}"><div class="bars">${g.items.map((_, i) => `<i class="${i < si ? 'f' : ''}">${i === si ? '<b id="sb"></b>' : ''}</i>`).join('')}</div>
+    <div class="sh">${av(g, 32)}${vf(g.verified)}<b>${esc(g.username)}</b><small>${rt(s.created)}</small>
+      ${s.mentions ? `<small style="color:#8fa0ff"> ${s.mentions.split(',').filter(Boolean).map((n) => `<a onclick="closeS();go('profile','${esc(n)}')" style="cursor:pointer">@${esc(n)}</a>`).join(' ')} </small>` : ''}
+      <div class="hr">${volCtl('story')}<button id="spb" onclick="storyTogglePause()" aria-label="Pausar" style="color:#fff">${I('pause', 20)}</button>${own ? `<button onclick="storyMenu(${s.id})" aria-label="Mais opções" style="color:#fff">${I('dots', 20)}</button>` : ''}<button onclick="closeS()" aria-label="Fechar">${I('x', 22)}</button></div></div>
+    ${vid ? `<video class="sm" src="${s.media}" autoplay playsinline></video>` : `<img class="sm" src="${s.media}" alt="">`}
+    <div style="position:absolute;bottom:14px;left:10px;right:10px;display:flex;gap:.5rem;align-items:center;color:#fff;z-index:3">
+      ${own ? `<button onclick="getStoryViews(${s.id})" style="flex:1;display:flex;align-items:center;gap:.4rem" title="Quem viu">${I('eye', 20)}<b id="svc">${s.views || 0}</b><small style="opacity:.8" id="svl">${(s.views || 0) === 1 ? 'visualização' : 'visualizações'}</small></button>
+      <button onclick="loadStoryReactions(${s.id})" style="flex:0 0 auto" title="Reações">${I('heart', 18)}</button>`
+      : `<input class="sci" id="sci" placeholder="Enviar mensagem..." maxlength="300" autocomplete="off" onfocus="storyPause()" onblur="storyResume()" onkeydown="if(event.key==='Enter'){event.preventDefault();commentStory(${s.id},this)}">
+      <button id="slk" class="sl ${s.liked ? 'on' : ''}" onclick="likeStory(${s.id},${gi},${si})" style="flex:0 0 auto" title="Curtir">${I('heart', 24)}</button>`}
+    </div>
+    <div class="pp">${I('play', 34)}</div><div class="tm" onclick="storyTogglePause()"></div><div class="tl" onclick="storyPrev(${gi},${si})"></div><div class="tr" onclick="openStory(${gi},${si + 1})"></div></div>`;
+  if (ghost) { o.appendChild(ghost); setTimeout(() => ghost.remove(), 600); }
+  const next = () => openStory(gi, si + 1);
+  if (vid) {
+    const v = o.querySelector('video.sm');
+    v.muted = smuted; v.volume = vol;
+    v.onended = next;
+    startClock(v, next);
+  } else startClock(null, next);
+}
+
+/* ---------- Explorar / Pesquisa ---------- */
+const gridItem = (p, i, tall) => { P[p.id] = p; return `<div class="gi ${tall ? 'tall' : ''}" style="--i:${i}" onclick="openPost(${p.id})">${p.type === 'video' ? `<video src="${p.media}#t=0.1" preload="metadata" muted></video><i>${I('play', 20)}</i>` : `<img src="${p.media}" loading="lazy" alt="">`}${p.repost_of ? `<i>${I('repost', 20)}</i>` : ''}
+  <div class="ov2"><span>${I('heart', 20)}${p.likes}</span><span>${I('comment', 20)}${p.ncomments}</span></div></div>`; };
+async function explore() {
+  $('view').innerHTML = '<div class="prof"><h2 style="margin:0 0 1rem">Explorar</h2><div class="grid stg" id="eg"></div></div>';
+  const ps = await api('/api/explore');
+  if (view !== 'explore') return;
+  $('eg').innerHTML = ps.map((p, i) => gridItem(p, i)).join('') || '<p class="empty" style="grid-column:1/-1">Ainda não há posts públicos.</p>';
+}
+function search(q) {
+  clearTimeout(sT);
+  sT = setTimeout(async () => {
+    const r = $('sres'); if (!r) return;
+    if (!q.trim()) { r.innerHTML = '<p class="empty">Digite um nome ou @usuário.</p>'; return; }
+    const us = await api('/api/search?q=' + encodeURIComponent(q.replace(/^@/, '')));
+    if ($('sres')) $('sres').innerHTML = us.map((u, i) => `<div class="rq" style="animation:rise .35s var(--ease) both;animation-delay:${i * 40}ms" onclick="go('profile','${u.username}')">${av(u, 44)}<span><b>${esc(u.username)}${vf(u.verified)}</b><small>${esc(u.name || '')}</small></span></div>`).join('') || '<p class="empty">Ninguém encontrado.</p>';
+  }, 250);
+}
+
+/* ---------- Reels ---------- */
+async function reels() {
+  $('view').innerHTML = '<div class="reels" id="rl"><div class="sk" style="width:min(430px,100%);height:80vh;margin-top:1rem"></div></div>';
+  const ps = await api('/api/reels');
+  if (view !== 'reels') return;
+  $('rl').innerHTML = ps.map((p) => { P[p.id] = p; return `<section class="reel"><video src="${p.media}" loop playsinline muted preload="metadata" data-auto="reel" onclick="togglePlay(this)" onplay="vpPlay(this)" onpause="vpPause(this)"></video>
+    <div class="pp">${I('play', 34)}</div>
+    <div class="rtop"><button class="mute rmore" onclick="postMenu(${p.id})" aria-label="Mais opções">${I('dots', 16)}</button>${volCtl('feed')}</div>
+    <div class="ra" data-pa="${p.id}">${acts(p)}</div>
+    <div class="ri"><div class="row">${av(p, 34)}<b onclick="go('profile','${p.username}')">${esc(p.username)}</b>${vf(p.verified)}<small style="color:#ccc">• ${rt(p.created)}</small></div>${p.caption ? `<p>${linkify(esc(p.caption))}</p>` : ''}${tagsLine(p)}</div></section>`; }).join('')
+    || `<div class="eg" style="margin:auto">${I('reels', 48)}<h3>Nenhum reel ainda</h3><p class="empty">Os vídeos publicados aparecem aqui.</p></div>`;
+  watch();
+}
+
+/* ---------- Perfil ---------- */
+const TABS = [['feed', 'grid', 'Feed'], ['reels', 'reels', 'Reels'], ['reposts', 'repost', 'Republicado'], ['tagged', 'tag', 'Marcações']];
+async function profile(name) {
+  name = name || me.username;
+  let d;
+  try { d = await api('/api/u/' + encodeURIComponent(name)); } catch (e) { $('view').innerHTML = `<p class="empty">${esc(e.message)}</p>`; return; }
+  if (view !== 'profile') return;
+  const u = d.user, self = d.rel === 'self';
+  if (self) { me = u; renderSide(); }
+  if (lastProf !== u.username) { curTab = 'feed'; lastProf = u.username; }
+  const reqs = self ? await api('/api/requests') : [];
+  [...d.items, ...d.tagged].forEach((p) => { P[p.id] = p; });
+  PD = {
+    feed: d.items.filter((p) => !p.repost_of && p.type === 'image'),
+    reels: d.items.filter((p) => !p.repost_of && p.type === 'video'),
+    reposts: d.items.filter((p) => p.repost_of),
+    tagged: d.tagged, self, name: u.username,
+  };
+  const btns = self
+    ? `<button class="gh" onclick="editProfile()">Editar perfil</button><button class="gh" onclick="changeUsernameUI()">Trocar username</button><button class="gh" onclick="shareProfile('${u.username}')">Compartilhar perfil</button>`
+    : `<button class="${d.rel === 'none' ? 'bl' : 'gh'}" onclick="follow(${u.id},'${u.username}')">${RL[d.rel]}</button><button class="gh" onclick="openChat(${u.id},'${u.username}')">Mensagem</button><button class="gh" onclick="blockUser(${u.id})">Bloquear @${esc(u.username)}</button>`;
+  $('view').innerHTML = `<div class="prof"><div class="pt">${av(u, 150)}<div class="pi">
+      <div class="row"><h2>${esc(u.username)}${vf(u.verified)}</h2>${u.private ? `<small title="Conta privada">${I('lock', 16)}</small>` : ''}</div>
+      <div class="cnt"><span><b>${d.count.posts}</b> posts</span><span><b>${d.count.followers}</b> seguidores</span><span><b>${d.count.following}</b> seguindo</span></div>
+      <div class="bio"><b>${esc(u.name || '')}</b><p>${linkify(esc(u.bio || ''))}</p>
+      ${u.song_url ? `<div class="song"><button data-src="${esc(u.song_url)}" onclick="playSong(this)" aria-label="Tocar prévia">▶</button>${u.song_art ? `<img src="${esc(u.song_art)}" alt="">` : ''}<span><b>${esc(u.song_title)}</b><small>${esc(u.song_artist)}</small></span></div>` : ''}</div></div></div>
+    <div class="pbt">${btns}</div>
+    ${reqs.length ? `<div class="reqs"><b>Solicitações para seguir</b>${reqs.map((r) => `<div class="rq">${av(r, 36)}<span>@${esc(r.username)}</span><button class="bl" onclick="reqAct(${r.id},'accept')">Aceitar</button><button class="gh" onclick="reqAct(${r.id},'decline')">Recusar</button></div>`).join('')}</div>` : ''}
+    ${self ? `<div class="hl"><button onclick="newPost('story')"><div class="nw">${I('plus', 34)}</div>Novo</button></div>` : '<div style="height:1.4rem"></div>'}
+    ${d.canSee ? `<div class="tabs" role="tablist">${TABS.map(([k, ic, t]) => `<button class="tab" role="tab" data-t="${k}" onclick="setTab('${k}')">${I(ic, 20)}<span>${t}</span></button>`).join('')}<i class="ink"></i></div><div class="tc" id="tc"></div>`
+      : `<div class="eg" style="border-top:1px solid var(--line)"><div class="circ">${I('lock', 28)}</div><h3 style="font-size:1.3rem">Esta conta é privada</h3><p class="empty">Siga para ver as fotos e vídeos.</p></div>`}</div>`;
+  if (d.canSee) { setTab(curTab, true); window.addEventListener('resize', moveInk); }
+}
+function moveInk() {
+  const t = document.querySelector('.tab.on'), k = document.querySelector('.ink');
+  if (t && k) { k.style.left = t.offsetLeft + 'px'; k.style.width = t.offsetWidth + 'px'; }
+}
+const EMPTY = {
+  feed: ['camera', 'Compartilhar fotos', 'Quando você compartilhar fotos, elas aparecerão no seu perfil.', 'Compartilhar sua primeira foto', 'Nenhuma foto ainda.'],
+  reels: ['reels', 'Reels', 'Os vídeos que você publicar aparecerão aqui.', 'Compartilhar seu primeiro vídeo', 'Nenhum vídeo ainda.'],
+  reposts: ['repost', 'Republicado', 'As publicações que você republicar aparecerão aqui.', '', 'Nada republicado ainda.'],
+  tagged: ['tag', 'Fotos com você', 'Quando alguém marcar você em uma publicação, ela aparecerá aqui.', '', 'Ninguém foi marcado ainda.'],
+};
+function setTab(k, instant) {
+  curTab = k;
+  document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('on', t.dataset.t === k));
+  if (instant) { const ink = document.querySelector('.ink'); ink.style.transition = 'none'; moveInk(); void ink.offsetWidth; ink.style.transition = ''; } else moveInk();
+  const list = PD[k], e = EMPTY[k], tc = $('tc'); if (!tc) return;
+  tc.innerHTML = list.length
+    ? `<div class="grid stg">${list.map((p, i) => gridItem(p, i, k === 'reels')).join('')}</div>`
+    : `<div class="eg"><div class="circ">${I(e[0], 30)}</div><h3>${e[1]}</h3><p class="empty" style="padding:0">${PD.self ? e[2] : e[4]}</p>${PD.self && e[3] ? `<button class="lnk" onclick="newPost()">${e[3]}</button>` : ''}</div>`;
+  watchGrid();
+}
+function watchGrid() { /* miniaturas de vídeo ficam paradas */ }
+function shareProfile(n) {
+  const url = location.origin + '/#@' + n;
+  (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject()).then(() => toast('Link do perfil copiado'), () => prompt('Copie o link do perfil:', url));
+}
+function playSong(b) {
+  const s = b.dataset.src;
+  if (au && au.src === s && !au.paused) { au.pause(); b.textContent = '▶'; return; }
+  if (au) au.pause();
+  dmStopAll();
+  document.querySelectorAll('.song button').forEach((x) => { x.textContent = '▶'; });
+  au = new Audio(s); au.play(); b.textContent = '❚❚'; au.onended = () => { b.textContent = '▶'; };
+}
+function playSongPost(src, pid) {
+  if (au && au.src === src && !au.paused) { au.pause(); return; }
+  if (au) au.pause();
+  dmStopAll();
+  document.querySelectorAll('.song button').forEach((x) => { x.textContent = '▶'; });
+  au = new Audio(src);
+  au.play();
+  const btn = document.querySelector(`[data-pa="${pid}"] button`);
+  if (btn) btn.textContent = '❚❚';
+  let slider = document.querySelector('#song-slider-' + pid);
+  if (!slider) {
+    slider = document.createElement('input');
+    slider.type = 'range';
+    slider.id = 'song-slider-' + pid;
+    slider.style = 'width:120px;margin-top:4px;accent-color:var(--blue)';
+    const wrapper = document.querySelector(`[data-pa="${pid}"]`) || document.querySelector(`[data-pl="${pid}"]`);
+    if (wrapper) wrapper.parentNode.insertBefore(slider, wrapper.nextSibling);
+  }
+  au.onloadedmetadata = () => { slider.max = Math.floor(au.duration || 30); };
+  au.ontimeupdate = () => { slider.value = Math.floor(au.currentTime); };
+  slider.oninput = () => { au.currentTime = slider.value; };
+  au.onended = () => { if (btn) btn.textContent = '▶'; slider.value = 0; };
+}
+async function follow(id, name) { await api('/api/follow/' + id, { method: 'POST' }); profile(name); }
+async function reqAct(id, a) { await api(`/api/requests/${id}/${a}`, { method: 'POST' }); profile(me.username); }
+async function verify() { me = await api('/api/verify', { method: 'POST' }); toast(me.verified ? 'Selo Verificado ativado' : 'Selo removido'); if (view === 'profile') profile(me.username); }
+async function deactivateAccount() {
+  const senha = prompt('Digite sua senha para confirmar a desativação da conta:');
+  if (!senha) return;
+  try { await api('/api/account/deactivate', { method: 'POST', json: { password: senha } }); toast('Conta desativada.'); logout(); } catch (e) { toast(e.message); }
+}
+async function deleteAccount() {
+  const senha = prompt('Digite sua senha para confirmar a EXCLUSÃO PERMANENTE da conta:');
+  if (!senha) return;
+  try { await api('/api/account/delete', { method: 'DELETE', json: { password: senha } }); toast('Conta excluída.'); logout(); } catch (e) { toast(e.message); }
+}
+
+function editProfile() {
+  song = { song_title: me.song_title, song_artist: me.song_artist, song_url: me.song_url, song_art: me.song_art };
+  modal(`<h3>Editar perfil</h3><label>Foto de perfil</label><input type="file" id="ea" accept="image/*" onchange="openAvatarCropper(this)">
+  <div id="eaPreview" style="margin:.5rem 0"></div>
+  <label>Nome</label><input id="en" maxlength="40" value="${esc(me.name)}"><label>Biografia</label><textarea id="eb" maxlength="150">${esc(me.bio)}</textarea>
+  <label>Música da bio (prévia de 30s)</label><div class="row"><input id="eq" placeholder="Buscar música ou artista"><button class="gh" onclick="findSong()">Buscar</button></div>
+  <div id="er"></div><div class="row"><small id="es">${song.song_title ? '🎵 ' + esc(song.song_title) + ' — ' + esc(song.song_artist) : 'Nenhuma música escolhida'}</small>
+  <button class="gh" onclick="song={};$('es').textContent='Nenhuma música escolhida'">Remover</button></div>
+  <label class="chk"><input type="checkbox" id="ep" ${me.private ? 'checked' : ''}> Conta privada</label>
+  <div class="row" style="margin-top:.8rem"><button class="bl" onclick="saveProfile()">Salvar</button><button class="gh" onclick="verify()">${me.verified ? 'Cancelar Verificado' : 'Obter Verificado grátis'}</button><button class="gh" onclick="deactivateAccount()" style="color:#ff4d4d">Desativar Conta</button><button class="gh rd" onclick="deleteAccount()" style="color:#ff2d2d">Excluir Conta</button><button class="gh" style="margin-left:auto" onclick="logout()">Sair</button></div><p class="err" id="ee"></p>`);
+}
+async function findSong() {
+  const q = $('eq').value.trim(); if (!q) return;
+  $('er').textContent = 'Buscando...';
+  try {
+    const r = await (await fetch('https://itunes.apple.com/search?media=music&entity=song&limit=6&term=' + encodeURIComponent(q))).json();
+    SR = r.results.filter((x) => x.previewUrl);
+    $('er').innerHTML = SR.map((x, i) => `<div class="rq" onclick="pickSong(${i})"><img class="sa" src="${esc(x.artworkUrl100)}" alt=""><span><b>${esc(x.trackName)}</b><small>${esc(x.artistName)}</small></span></div>`).join('') || 'Nada encontrado.';
+  } catch { $('er').textContent = 'Não foi possível buscar agora. Verifique sua internet.'; }
+}
+function pickSong(i) {
+  const x = SR[i]; song = { song_title: x.trackName, song_artist: x.artistName, song_url: x.previewUrl, song_art: x.artworkUrl100 };
+  $('es').textContent = '🎵 ' + x.trackName + ' — ' + x.artistName; $('er').innerHTML = '';
+}
+async function saveProfile() {
+  const fd = new FormData();
+  fd.append('name', $('en').value); fd.append('bio', $('eb').value); fd.append('private', $('ep').checked ? '1' : '0');
+  for (const k of ['song_title', 'song_artist', 'song_url', 'song_art']) fd.append(k, song[k] || '');
+  if ($('ea').files[0]) fd.append('avatar', $('ea').files[0]);
+  try { me = await api('/api/me', { method: 'PUT', body: fd }); renderSide(); go('profile', me.username); } catch (e) { $('ee').textContent = e.message; }
+}
+
+/* ---------- Mensagens ---------- */
+async function chats() {
+  $('view').innerHTML = '<div id="chat"><div id="cl"><h3>Mensagens</h3><div class="sk" style="height:56px;margin:.4rem .2rem"></div><div class="sk" style="height:56px;margin:.4rem .2rem"></div><div class="sk" style="height:56px;margin:.4rem .2rem"></div></div><div id="room"><p class="empty" style="margin:auto">Selecione uma conversa.</p></div></div>';
+  await loadChatList();
+  if (view !== 'chats') return;
+  if (pendingPeer) { const p = pendingPeer; pendingPeer = null; openChat(p.id, p.name); }
+}
+async function loadChatList() {
+  if (!$('cl')) return;
+  try {
+    chatUsers = await api('/api/chats');
+    if (!$('cl')) return;
+    $('cl').innerHTML = '<h3>Mensagens</h3>' + (chatUsers.map((u) => `<button class="rq" data-id="${u.id}" onclick="openChat(${u.id},'${u.username}')">${av(u, 48)}<span><b>${esc(u.username)}${vf(u.verified)}</b></span></button>`).join('') || '<p class="empty">Siga alguém para começar uma conversa.</p>');
+    if (peer) document.querySelectorAll('#cl .rq').forEach((b) => b.classList.toggle('on', +b.dataset.id === peer.id));
+  } catch {
+    if ($('cl')) $('cl').innerHTML = '<h3>Mensagens</h3><p class="empty">Não foi possível carregar as conversas.</p>';
+  }
+}
+async function openChat(id, name) {
+  if (view !== 'chats') { pendingPeer = { id, name }; return go('chats'); }
+  const req = ++chatLoadId;
+  if (!name) {
+    const u = chatUsers.find((x) => x.id === id);
+    name = u ? u.username : '';
+    if (!name) { try { chatUsers = await api('/api/chats'); const v = chatUsers.find((x) => x.id === id); if (v) name = v.username; } catch {} }
+  }
+  if (view !== 'chats' || req !== chatLoadId) return;
+  if (!name) name = 'Conversa';
+  dmReset();
+  peer = { id, name };
+  unread = 0; badges(true);
+  document.querySelectorAll('#cl .rq').forEach((b) => b.classList.toggle('on', +b.dataset.id === id));
+  $('room').innerHTML = `<div class="rh"><span class="rhname" title="${esc(name)}">${esc(name)}</span><span class="rhactions"><button class="ib" onclick="togglePinChat(${id})" title="Fixar/desafixar conversa" aria-label="Fixar conversa">${I('shield', 16)}</button><button class="ib" onclick="deleteChat(${id})" title="Excluir conversa" aria-label="Excluir conversa">${I('x', 16)}</button></span></div><div id="msgs"></div><form id="send" onsubmit="sendMsg(event)"><input id="mt" placeholder="Mensagem..." autocomplete="off"><button type="button" class="ib" onclick="pickDMFile()" title="Anexar foto ou vídeo" aria-label="Anexar mídia">${I('camera', 18)}</button><button type="button" class="ib" onclick="pickDMAudio()" title="Enviar áudio do dispositivo" aria-label="Enviar áudio">${I('music', 18)}</button><button type="button" class="ib" onclick="openEmojiPicker('mt')" title="Emoji" aria-label="Emoji">${I('smile', 18)}</button><button class="bl">Enviar</button></form>`;
+  try {
+    const msgs = await api('/api/messages/' + id);
+    if (view !== 'chats' || !peer || peer.id !== id || req !== chatLoadId) return;
+    if (!msgs.length) $('msgs').innerHTML = '<p class="empty">Nenhuma mensagem ainda. Diga oi 👋</p>';
+    else msgs.forEach(addMsg);
+  } catch (e) { if (peer && peer.id === id) toast(e.message); }
+  $('mt') && window.matchMedia('(hover:hover)').matches && $('mt').focus();
+}
+const miniPost = (p) => { P[p.id] = p; return `<div class="mp" onclick="openPost(${p.id})">${p.type === 'video' ? `<video src="${p.media}#t=0.1" muted preload="metadata"></video>` : `<img src="${p.media}" alt="">`}<small><b>@${esc(p.username)}</b> ${esc((p.caption || '').slice(0, 60))}</small></div>`; };
+function addMsg(m) {
+  const box = $('msgs'); if (!box) return;
+  if (m.id != null && box.querySelector('[data-mid="' + m.id + '"]')) return; // idempotente: nunca duplica
+  const d = document.createElement('div'); d.className = 'm' + (m.from_id === me.id ? ' me' : ''); d.dataset.mid = m.id; d.dataset.mtext = m.text || '';
+  let mediaHtml = '';
+  const own = m.from_id === me.id;
+  if (m.media) {
+    if (m.type === 'story_reply') {
+      d.style.width = 'fit-content'; d.style.minWidth = '150px';
+      const vid = /\.(mp4|webm|mov)$/i.test(m.media);
+      const frame = vid ? `<video src="${esc(m.media)}#t=0.1" muted preload="metadata" playsinline style="width:100%;height:100%;object-fit:cover;display:block"></video>` : `<img src="${esc(m.media)}" alt="" style="width:100%;height:100%;object-fit:cover;display:block">`;
+      mediaHtml = `<div style="margin:.1rem 0 .4rem"><small style="display:block;color:${m.from_id === me.id ? 'rgba(255,255,255,.8)' : 'var(--mute)'};font-size:.7rem;margin-bottom:.3rem">${m.from_id === me.id ? 'Você respondeu ao story' : 'Respondeu ao seu story'}</small><div style="width:120px;aspect-ratio:9/14;border-radius:12px;overflow:hidden;background:#000">${frame}</div></div>`;
+    } else if (m.type === 'audio') {
+      dmSrc.set(m.id, m.media);
+      mediaHtml = `<div class="dm-audio"><button class="aplay" data-play="${m.id}" onclick="toggleDmAudio(${m.id})" aria-label="Tocar áudio">▶</button><div class="abar" data-bar="${m.id}" onclick="seekDmAudio(event,${m.id})" title="Avançar no áudio"><i></i></div><span class="atime" data-time="${m.id}">0:00</span></div><small class="alabel">${own ? 'Nota de áudio enviada' : 'Nota de áudio'}</small>`;
+    } else if (m.type === 'song') {
+      mediaHtml = `<div class="audio-bubble"><div class="audio-player"><button class="audio-btn" onclick="playSongPost('${esc(m.media)}',0)">▶</button><div class="audio-progress"><div class="audio-progress-fill" id="audio-fill-${m.id}"></div></div><div class="audio-dots" id="audio-dots-${m.id}"></div><div class="audio-time" id="audio-time-${m.id}">0:00</div></div><div class="audio-transcript" onclick="showTranscript('${esc(m.media)}')" title="Ver transcrição">Ver transcrição</div></div>`;
+    } else {
+      const vidOpts = own ? `<button class="ib" onclick="toggleDmVideoMenu(${m.id},event)" aria-label="Mais opções">${I('dots', 16)}</button>` : '';
+      mediaHtml = (m.type === 'video' ? `<div style="display:flex;flex-direction:column;align-items:center"><video class="dmsg" src="${m.media}" controls playsinline style="width:140px;height:140px;border-radius:16px;object-fit:cover;background:#000;margin:.3rem 0"></video>${vidOpts}</div>` : `<img src="${m.media}" style="width:140px;height:140px;border-radius:16px;object-fit:cover;background:#000;margin:.3rem 0" onclick="openPostByIdMsg('${m.media}')">`);
+    }
+  }
+  const editedBadge = m.edited_at ? `<small style="color:var(--mute);font-size:.65rem;margin-left:.4rem">editado</small>` : '';
+  const isVideo = m.type === 'video';
+  const bare = isVideo;
+  d.style.background = bare ? 'transparent' : '';
+  d.style.boxShadow = 'none';
+  d.style.padding = bare ? '0' : '';
+  d.style.margin = bare ? '0' : '';
+  d.innerHTML = (m.post ? miniPost(m.post) : '') + mediaHtml + (m.text ? `<span>${linkify(esc(m.text))}${editedBadge}</span>` : '') +
+    (own ? `<div class="mtools"><button onclick="editMessage(${m.id},this)">Editar</button><button onclick="deleteMessage(${m.id})">Excluir</button></div>` : '');
+  box.appendChild(d);
+  box.scrollTop = box.scrollHeight;
+  if (m.type === 'audio') setTimeout(() => dmAudioFor(m.id), 40);
+  if (m.type === 'song') {
+    const dotsContainer = document.querySelector('#audio-dots-' + m.id);
+    const fill = document.querySelector('#audio-fill-' + m.id);
+    const timeEl = document.querySelector('#audio-time-' + m.id);
+    if (dotsContainer && au) {
+      const dotCount = 20;
+      dotsContainer.innerHTML = '';
+      for (let i = 0; i < dotCount; i++) {
+        const dot = document.createElement('div');
+        dot.className = 'audio-dot';
+        dotsContainer.appendChild(dot);
+      }
+      const dots = dotsContainer.querySelectorAll('.audio-dot');
+      au.onloadedmetadata = () => {
+        const dur = Math.floor(au.duration || 30);
+        timeEl.textContent = Math.floor(dur / 60) + ':' + String(dur % 60).padStart(2, '0');
+      };
+      au.ontimeupdate = () => {
+        const cur = au.currentTime;
+        const dur = au.duration || 30;
+        const pct = Math.min(100, (cur / dur) * 100);
+        fill.style.width = pct + '%';
+        const activeDot = Math.floor((cur / dur) * dotCount);
+        dots.forEach((d, i) => { d.style.background = i <= activeDot ? '#fff' : 'rgba(255,255,255,.6)'; });
+        const curMin = Math.floor(cur / 60);
+        const curSec = Math.floor(cur % 60);
+        timeEl.textContent = curMin + ':' + String(curSec).padStart(2, '0');
+      };
+    }
+  }
+}
+function openPostByIdMsg(media) { window.open(media, '_blank'); }
+function sendMsg(e) {
+  e.preventDefault();
+  if (!peer) return toast('Selecione uma conversa.');
+  const t = $('mt').value.trim(); if (!t) return;
+  if (!sock || !sock.connected) return toast('Sem conexão. Verifique sua internet.');
+  sock.emit('msg', { to: peer.id, text: t });
+  $('mt').value = '';
+}
+
+// ============ NOVAS FUNCIONALIDADES ============
+
+// ---- Bloquear/desbloquear ----
+async function blockUser(id) {
+  try { await api(`/api/block/${id}`, { method: 'POST' }); toast('Usuário ' + (await isBlockedNow(id) ? 'desbloqueado' : 'bloqueado')); } catch (e) { toast(e.message); }
+  if (view === 'profile') profile(me.username);
+}
+async function isBlockedNow(id) { try { const b = await api('/api/blocked'); return b.some((x) => x.id === id); } catch { return false; } }
+
+// ---- Editar/Excluir Post ----
+async function editPost(id) {
+  const p = P[id]; if (!p) return;
+  const cap = await promptBox('Editar legenda:', 'Digite a legenda...', p.caption || '');
+  if (cap === null) return;
+  try { await api(`/api/posts/${id}`, { method: 'PUT', json: { caption: cap } }); toast('Publicação editada'); reload(id); if (view === 'profile') profile(me.username); } catch (e) { toast(e.message); }
+}
+async function deletePost(id) {
+  if (!(await ask('Excluir esta publicação?'))) return;
+  try { await api(`/api/posts/${id}`, { method: 'DELETE' }); toast('Publicação excluída'); closeM(true); if (view === 'profile') profile(me.username); else if (view === 'reels') reels(); else go('home'); } catch (e) { toast(e.message); }
+}
+
+// ---- Editar/Excluir Comentário ----
+// edição na própria linha: troca o texto por um campo; Enter salva, Esc (ou clicar fora) cancela
+function inlineEdit(textEl, current, save, cancel, line = 'var(--blue)') {
+  const inp = document.createElement('input');
+  inp.value = current; inp.maxLength = 300; inp.autocomplete = 'off';
+  inp.style.cssText = `display:inline-block;width:min(100%,260px);min-width:120px;padding:.1rem .3rem;margin:0;border:0;border-bottom:1px solid ${line};border-radius:0;background:transparent;box-shadow:none;font:inherit;color:inherit;outline:0`;
+  textEl.style.display = 'none'; textEl.after(inp); inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length);
+  let done = false;
+  const end = (fn) => { if (done) return; done = true; fn(); };
+  inp.onkeydown = (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); const t = inp.value.trim(); if (!t || t === current.trim()) end(cancel); else end(() => save(t)); }
+    else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); end(cancel); }
+  };
+  inp.onblur = () => setTimeout(() => end(cancel), 120);
+  return inp;
+}
+function editComment(pid, cid, btn) {
+  const p = P[pid]; const c = p && p.comments && p.comments.find((x) => x.id === cid);
+  const row = btn && btn.closest('p'); if (!c || !row || row.querySelector('input')) return;
+  const hide = row.querySelectorAll('button, .ed'); hide.forEach((e) => { e.style.display = 'none'; });
+  const restore = () => { row.querySelector('input')?.remove(); row.querySelector('.ct').style.display = ''; hide.forEach((e) => { e.style.display = ''; }); };
+  inlineEdit(row.querySelector('.ct'), c.text, async (t) => {
+    try { await api(`/api/comments/${cid}`, { method: 'PUT', json: { text: t } }); toast('Comentário editado'); reload(pid); } catch (e) { toast(e.message); restore(); }
+  }, restore);
+}
+async function deleteComment(pid, cid) {
+  if (!(await ask('Excluir comentário?'))) return;
+  try { await api(`/api/comments/${cid}`, { method: 'DELETE' }); toast('Comentário excluído'); reload(pid); } catch (e) { toast(e.message); }
+}
+
+// ---- Editar/Excluir Mensagem DM ----
+function editMessage(id, btn) {
+  const d = btn ? btn.closest('.m') : document.querySelector(`#msgs [data-mid="${id}"]`);
+  if (!d || d.querySelector('input')) return;
+  let span = d.querySelector(':scope > span');
+  if (!span) { span = document.createElement('span'); d.insertBefore(span, d.querySelector(':scope > div:last-child')); }
+  const tools = d.querySelector(':scope > div:last-child'), toolsBefore = tools ? tools.style.display : '';
+  if (tools) tools.style.display = 'none';
+  const restore = () => { d.querySelector('input')?.remove(); span.style.display = ''; if (tools) tools.style.display = toolsBefore; };
+  inlineEdit(span, d.dataset.mtext || '', async (t) => {
+    try {
+      await api(`/api/messages/${id}`, { method: 'PUT', json: { text: t } });
+      d.dataset.mtext = t; span.innerHTML = `${linkify(esc(t))}<small style="color:var(--mute);font-size:.65rem;margin-left:.4rem">editado</small>`;
+      restore(); toast('Mensagem editada');
+    } catch (e) { toast(e.message); restore(); }
+  }, restore, 'rgba(255,255,255,.75)');
+}
+async function deleteMessage(id) {
+  if (!(await ask('Excluir mensagem?'))) return;
+  try {
+    await api(`/api/messages/${id}`, { method: 'DELETE' });
+    const a = dmAudios.get(id); if (a) { a.pause(); dmAudios.delete(id); }
+    dmSrc.delete(id);
+    toast('Mensagem excluída');
+    if (peer) openChat(peer.id, peer.name);
+  } catch (e) { toast(e.message); }
+}
+
+// ---- Excluir Story ----
+async function deleteStory(id) {
+  if (!(await ask('Excluir story?'))) return;
+  try { await api(`/api/stories/${id}`, { method: 'DELETE' }); toast('Story excluída'); closeM(true); closeS(); go('home'); } catch (e) { toast(e.message); }
+}
+function storyMenu(id) {
+  storyPause(); // o story continua visível atrás do menu, pausado
+  modal(`<button class="rd" onclick="deleteStory(${id})">Excluir story</button><button class="gh" onclick="closeM()">Cancelar</button>`, 'sheet');
+  const m = $('m'); if (m) { m.style.background = 'rgba(0,0,0,.4)'; m.style.backdropFilter = 'none'; }
+}
+
+// ---- Reações a Story ----
+async function likeStory(storyId, gi, si) {
+  try {
+    const r = await api(`/api/stories/${storyId}/like`, { method: 'POST' });
+    const s = G[gi] && G[gi].items[si]; if (s) s.liked = r.liked;
+    const b = $('slk'); if (b) b.classList.toggle('on', r.liked);
+    if (r.liked) toast('Reação enviada');
+  } catch (e) { toast(e.message); }
+}
+// pausa o story enquanto a pessoa digita (ou há uma janela aberta) e retoma depois
+function storyPause() {
+  if (stClock) stClock.paused = true;
+  const v = document.querySelector('#sv video.sm'); if (v) v.pause();
+}
+function storyTogglePause() {
+  stManual = !stManual;
+  const b = $('spb'); if (b) { b.innerHTML = I(stManual ? 'play' : 'pause', 20); b.setAttribute('aria-label', stManual ? 'Continuar' : 'Pausar'); }
+  const bx = document.querySelector('#sv .sbox'); if (bx) bx.classList.toggle('paused', stManual);
+  if (stManual) storyPause(); else storyResume();
+}
+function storyResume() {
+  const o = $('sv'); if (!o || $('m') || !stClock || stManual) return;
+  if (document.activeElement && document.activeElement.id === 'sci') return;
+  stClock.paused = false; stClock.last = performance.now();
+  const v = o.querySelector('video.sm'); if (v && !v.ended) v.play().catch(() => {});
+}
+async function commentStory(storyId, inp) {
+  const t = (inp.value || '').trim(); if (!t) return;
+  try { await api(`/api/stories/${storyId}/comment`, { method: 'POST', json: { text: t } }); inp.value = ''; toast('Mensagem enviada'); inp.blur(); } catch (e) { toast(e.message); }
+}
+async function loadStoryReactions(storyId) {
+  storyPause();
+  try { const r = await api(`/api/stories/${storyId}/reactions`); modal(`<h3>Reações</h3>${r.map((x) => `<div class="rq">${av(x, 40)}<span><b>${esc(x.username)}${vf(x.verified)}</b><small>${x.type === 'like' ? '❤️ curtiu' : '💬 ' + esc(x.text)}</small></span></div>`).join('') || '<p class="empty">Sem reações.</p>'}`); } catch (e) { toast(e.message); }
+}
+
+// ---- Visualizacoes de Story ----
+async function viewStory(storyId) {
+  try { await api(`/api/stories/${storyId}/view`, { method: 'POST' }); } catch {}
+}
+async function getStoryViews(storyId) {
+  storyPause();
+  try { const r = await api(`/api/stories/${storyId}/views`); modal(`<h3>Visualizações</h3><p><b>${r.count}</b> ${r.count === 1 ? 'perfil viu' : 'perfis viram'} esta story.</p>${r.viewers.map((v) => `<div class="rq">${av(v, 40)}<span><b>${esc(v.username)}${vf(v.verified)}</b><small>${rt(v.viewed_at)}</small></span></div>`).join('')}`); } catch (e) { toast(e.message); }
+}
+
+// ---- Trocar Username ----
+async function changeUsernameUI() {
+  const nu = prompt('Novo nome de usuário (3 a 20 caracteres, letras, números e _):');
+  if (!nu) return;
+  try {
+    const r = await api('/api/username/change', { method: 'POST', json: { new_username: nu } });
+    token = localStorage.token = r.token;
+    toast('Username alterado para @' + r.username);
+    go('profile', r.username);
+  } catch (e) { toast(e.message); }
+}
+
+// ---- Nota de áudio na DM: use pickDMAudio() (arquivo local do dispositivo) ----
+
+// ---- Fixar/desfixar chat ----
+async function togglePinChat(id) {
+  const name = (peer && peer.id === id && peer.name) || ((chatUsers.find((u) => u.id === id) || {}).username) || '';
+  try {
+    const r = await api(`/api/chat/pin/${id}`, { method: 'POST' });
+    toast(r.pinned ? 'Conversa fixada' : 'Conversa desafixada');
+    await loadChatList();
+    openChat(id, name);
+  } catch (e) { toast(e.message); }
+}
+
+// ---- Excluir chat ----
+async function deleteChat(id) {
+  if (!(await ask('Excluir esta conversa?'))) return;
+  try { await api(`/api/chat/${id}`, { method: 'DELETE' }); toast('Conversa excluída'); go('chats'); } catch (e) { toast(e.message); }
+}
+
+// ---- Enviar mídia na DM (sem duplicar: o servidor devolve o eco com o ID real) ----
+async function pickDMFile() {
+  if (!peer) return toast('Selecione uma conversa.');
+  const chat = { id: peer.id, name: peer.name };
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*,video/*';
+  input.style.display = 'none';
+  document.body.appendChild(input);
+  input.onchange = async (e) => {
+    const f = e.target.files[0]; if (!f) return;
+    const fd = new FormData(); fd.append('media', f);
+    try {
+      const r = await fetch('/api/dm/media', { method: 'POST', headers: { Authorization: 'Bearer ' + token }, body: fd });
+      let d = {};
+      try { d = await r.json(); } catch {}
+      if (!r.ok || !d.url) throw new Error(d.error || 'Falha ao enviar mídia.');
+      if (!sock || !sock.connected) throw new Error('Sem conexão. Verifique sua internet.');
+      sock.emit('msg', { to: chat.id, media: d.url, media_type: d.type });
+      toast('Mídia enviada');
+    } catch (err) { toast(err.message); }
+    finally { input.remove(); }
+  };
+  input.click();
+}
+
+// ---- Enviar nota de áudio local (qualquer formato de áudio do dispositivo) ----
+async function pickDMAudio() {
+  if (!peer) return toast('Selecione uma conversa.');
+  const chat = { id: peer.id, name: peer.name };
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'audio/*,.mp3,.m4a,.m4b,.aac,.wav,.ogg,.oga,.opus,.weba,.flac,.amr,.wma,.aiff,.aif,.au,.mid,.midi,.3gp,.3g2,.caf,.mka,.mp2,.mpga';
+  input.style.display = 'none';
+  document.body.appendChild(input);
+  input.onchange = async (e) => {
+    const f = e.target.files[0]; if (!f) return;
+    const fd = new FormData(); fd.append('media', f);
+    try {
+      const r = await fetch('/api/dm/media', { method: 'POST', headers: { Authorization: 'Bearer ' + token }, body: fd });
+      let d = {};
+      try { d = await r.json(); } catch {}
+      if (!r.ok || !d.url) throw new Error(d.error || 'Falha ao enviar áudio.');
+      if (d.type !== 'audio') throw new Error('Escolha um arquivo de áudio.');
+      if (!sock || !sock.connected) throw new Error('Sem conexão. Verifique sua internet.');
+      const text = $('mt') ? $('mt').value.trim() : '';
+      sock.emit('msg', { to: chat.id, media: d.url, media_type: 'audio', text });
+      if ($('mt')) $('mt').value = '';
+      toast('Nota de áudio enviada');
+    } catch (err) { toast(err.message); }
+    finally { input.remove(); }
+  };
+  input.click();
+}
+
+// ---- Player de áudio das mensagens da DM ----
+function dmTime(s) { s = Math.max(0, Math.floor(s || 0)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
+function dmReset() {
+  dmAudios.forEach((a) => { try { a.pause(); } catch {} });
+  dmAudios.clear(); dmSrc.clear();
+  if (au && !au.paused) au.pause();
+}
+function dmStopAll(except) {
+  dmAudios.forEach((a, id) => {
+    if (id === except) return;
+    if (!a.paused) a.pause();
+    const b = document.querySelector(`[data-play="${id}"]`);
+    if (b) b.textContent = '▶';
+  });
+  if (au && !au.paused) au.pause();
+}
+function dmAudioFor(id) {
+  let a = dmAudios.get(id);
+  if (a) return a;
+  const url = dmSrc.get(id);
+  if (!url) return null;
+  a = new Audio(url);
+  a.preload = 'metadata';
+  dmAudios.set(id, a);
+  a.addEventListener('loadedmetadata', () => {
+    const t = document.querySelector(`[data-time="${id}"]`);
+    if (t) t.textContent = dmTime(a.duration);
+  });
+  a.addEventListener('timeupdate', () => {
+    const bar = document.querySelector(`[data-bar="${id}"] i`);
+    if (bar) bar.style.width = ((a.currentTime / (a.duration || 1)) * 100) + '%';
+    const t = document.querySelector(`[data-time="${id}"]`);
+    if (t) t.textContent = dmTime(a.currentTime);
+  });
+  a.addEventListener('ended', () => {
+    const b = document.querySelector(`[data-play="${id}"]`); if (b) b.textContent = '▶';
+    const bar = document.querySelector(`[data-bar="${id}"] i`); if (bar) bar.style.width = '0%';
+    const t = document.querySelector(`[data-time="${id}"]`); if (t) t.textContent = dmTime(a.duration);
+  });
+  a.addEventListener('error', () => { if (a.dataset.userstarted) toast('Este formato de áudio não é suportado por este navegador.'); });
+  return a;
+}
+function toggleDmAudio(id) {
+  const a = dmAudioFor(id);
+  if (!a) return;
+  a.dataset.userstarted = '1';
+  const b = document.querySelector(`[data-play="${id}"]`);
+  if (a.paused) {
+    dmStopAll(id);
+    a.play().then(() => { if (b) b.textContent = '❚❚'; }).catch(() => toast('Não foi possível tocar este áudio.'));
+  } else {
+    a.pause();
+    if (b) b.textContent = '▶';
+  }
+}
+function seekDmAudio(e, id) {
+  const a = dmAudioFor(id);
+  if (!a || !a.duration || !isFinite(a.duration)) return;
+  const r = e.currentTarget.getBoundingClientRect();
+  if (!r.width) return;
+  a.currentTime = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * a.duration;
+}
+
+// ---- Ver transcrição de áudio ----
+function showTranscript(src) {
+  toast('Transcrição: (recurso em desenvolvimento)');
+  console.log('Transcrevendo:', src);
+}
+
+// ---- Baixar Post / Story ----
+function downloadMedia(kind, id) {
+  window.location.href = `/api/download/${kind}/${id}`;
+}
+
+// ============ FIM NOVAS FUNCIONALIDADES ============
+
+// ---- Tela cheia do vídeo ----
+function toggleFullscreenVideo() {
+  const v = document.querySelector('.pdm video');
+  if (!v) return;
+  if (!document.fullscreenElement) {
+    v.requestFullscreen().catch(() => {});
+  } else {
+    document.exitFullscreen();
+  }
+}
+
+// ---- Menu de opções do vídeo na DM ----
+let dmVideoMenuOpen = null;
+function toggleDmVideoMenu(id, e) {
+  e.stopPropagation();
+  // fecha menu aberto
+  if (dmVideoMenuOpen) {
+    const old = document.getElementById('dmVideoMenu-' + dmVideoMenuOpen);
+    if (old) old.remove();
+    dmVideoMenuOpen = null;
+    return;
+  }
+  const menu = document.createElement('div');
+  menu.id = 'dmVideoMenu-' + id;
+  menu.style.position = 'fixed';
+  menu.style.zIndex = '1000';
+  const rect = e.target.getBoundingClientRect();
+  menu.style.left = rect.left + 'px';
+  menu.style.top = (rect.top + 30) + 'px';
+  menu.style.background = 'var(--soft)';
+  menu.style.border = '1px solid var(--line)';
+  menu.style.borderRadius = '10px';
+  menu.style.padding = '.5rem 0';
+  menu.style.minWidth = '140px';
+  menu.style.boxShadow = '0 4px 12px rgba(0,0,0,.4)';
+  menu.style.display = 'flex';
+  menu.style.flexDirection = 'column';
+  menu.innerHTML = `
+    <button class="dm-menu-item" onclick="toggleDmVideoFullscreen(${id})">${I('expand', 16)} Tela cheia</button>
+    <button class="dm-menu-item dm-menu-del" onclick="deleteDmVideo(${id})">${I('trash', 16)} Excluir mídia</button>
+  `;
+  document.body.appendChild(menu);
+  dmVideoMenuOpen = id;
+  const clean = () => { menu.remove(); dmVideoMenuOpen = null; document.removeEventListener('click', clean); };
+  document.addEventListener('click', clean);
+  setTimeout(() => document.addEventListener('click', clean), 50);
+}
+function toggleDmVideoFullscreen(id) {
+  const el = document.querySelector('#msgs [data-mid="' + id + '"] video');
+  if (!el) return;
+  document.getElementById('dmVideoMenu-' + id)?.remove();
+  dmVideoMenuOpen = null;
+  if (!document.fullscreenElement) {
+    el.requestFullscreen().catch(() => {});
+  } else {
+    document.exitFullscreen();
+  }
+}
+async function deleteDmVideo(id) {
+  const el = document.querySelector('#msgs [data-mid="' + id + '"]');
+  if (!el) return;
+  document.getElementById('dmVideoMenu-' + id)?.remove();
+  dmVideoMenuOpen = null;
+  if (!(await ask('Excluir esta mídia?'))) return;
+  try {
+    await api('/api/messages/' + id, { method: 'DELETE' });
+    el.remove();
+    toast('Mídia excluída');
+  } catch (e) { toast(e.message); }
+}
+
+// Fechar menu ao rolar
+window.addEventListener('scroll', () => {
+  if (dmVideoMenuOpen) {
+    const m = document.getElementById('dmVideoMenu-' + dmVideoMenuOpen);
+    if (m) m.remove();
+    dmVideoMenuOpen = null;
+  }
+});
+
+if (token) start();
+</script>
+</body>
+</html>
