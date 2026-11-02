@@ -145,6 +145,7 @@ const pool = new Pool({
     await addCol('users', 'song_start', 'INTEGER DEFAULT 0');
     await addCol('users', 'song_dur', 'INTEGER DEFAULT 0');
     await addCol('users', 'deactivated', 'INTEGER DEFAULT 0');
+    await addCol('users', 'gif_avatar', 'INTEGER DEFAULT 0');
     await addCol('posts', 'song_preview', "TEXT DEFAULT ''");
     await addCol('posts', 'song_duration', 'INTEGER DEFAULT 0');
     await addCol('posts', 'deleted', 'INTEGER DEFAULT 0');
@@ -160,6 +161,29 @@ const pool = new Pool({
     await addCol('messages', 'deleted', 'INTEGER DEFAULT 0');
     await addCol('notifs', 'story_id', 'INTEGER');
     await addCol('notifs', 'text', "TEXT DEFAULT ''");
+
+    // Concede permissão de GIF às contas autorizadas, uma vez por conta.
+    try {
+      await pool.query('CREATE TABLE IF NOT EXISTS app_settings(key TEXT PRIMARY KEY, value TEXT NOT NULL)');
+      const seedKey = 'gif_granted_v1';
+      const existing = await pool.query('SELECT value FROM app_settings WHERE key=$1 LIMIT 1', [seedKey]);
+      let granted = [];
+      if (existing.rows.length && existing.rows[0].value) {
+        try { granted = JSON.parse(existing.rows[0].value) || []; } catch { granted = String(existing.rows[0].value).split(','); }
+      }
+      const grantedSet = new Set(granted.map((u) => String(u).toLowerCase()));
+      const wanted = ['anarchy', 'scorppionn', 'horuswrld'];
+      const rows = await pool.query('SELECT LOWER(username) AS u FROM users WHERE LOWER(username) = ANY($1)', [wanted]);
+      const nowGrant = rows.rows.map((r) => r.u).filter((u) => !grantedSet.has(u));
+      if (nowGrant.length) {
+        await pool.query('UPDATE users SET gif_avatar=1 WHERE LOWER(username) = ANY($1)', [nowGrant]);
+        nowGrant.forEach((u) => grantedSet.add(u));
+        const value = JSON.stringify([...grantedSet].sort());
+        await pool.query('INSERT INTO app_settings(key,value) VALUES($1,$2) ON CONFLICT (key) DO UPDATE SET value=$2', [seedKey, value]);
+      }
+    } catch (e) {
+      console.error('[migração] gif_avatar:', e.message);
+    }
 
     // Migração: timestamps em milissegundos (Date.now()) não cabem em INTEGER (32 bits).
     // Necessário em bancos que já existiam antes da correção para BIGINT.

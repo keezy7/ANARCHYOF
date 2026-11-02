@@ -11,6 +11,13 @@ const pool = require('./db');
 
 const SECRET = process.env.JWT_SECRET || 'anarchy-archives-2026-segredo-secreto-alterado';
 const PORT = process.env.PORT || 3000;
+// Contas autorizadas a usar GIF como foto de perfil (usada na migração e no servidor).
+const GIF_AVATAR_USERS = new Set(
+  (process.env.GIF_USERS || 'anarchy,scorppionn,horuswrld')
+    .split(',')
+    .map((s) => s.trim().toLowerCase().replace(/^@/, ''))
+    .filter(Boolean)
+);
 fs.mkdirSync(path.join(__dirname, 'uploads'), { recursive: true });
 
 const run = async (text, params = []) => pool.query(text, params);
@@ -166,6 +173,7 @@ async function initDb() {
   await addCol('users', 'song_start', 'INTEGER DEFAULT 0');
   await addCol('users', 'song_dur', 'INTEGER DEFAULT 0');
   await addCol('users', 'deactivated', 'INTEGER DEFAULT 0');
+  await addCol('users', 'gif_avatar', 'INTEGER DEFAULT 0');
   await addCol('posts', 'song_preview', "TEXT DEFAULT ''");
   await addCol('posts', 'song_duration', 'INTEGER DEFAULT 0');
   await addCol('posts', 'deleted', 'INTEGER DEFAULT 0');
@@ -181,6 +189,30 @@ async function initDb() {
   await addCol('messages', 'deleted', 'INTEGER DEFAULT 0');
   await addCol('notifs', 'story_id', 'INTEGER');
   await addCol('notifs', 'text', "TEXT DEFAULT ''");
+
+  // Concede permissão de GIF para as três contas autorizadas, uma vez por conta.
+  // A lista de usernames já concedidos fica em app_settings para não herdar para alguém que registro depois do mesmo nome.
+  try {
+    await pool.query('CREATE TABLE IF NOT EXISTS app_settings(key TEXT PRIMARY KEY, value TEXT NOT NULL)');
+    const seedKey = 'gif_granted_v1';
+    const existing = await pool.query('SELECT value FROM app_settings WHERE key=$1 LIMIT 1', [seedKey]);
+    let granted = [];
+    if (existing.rows.length && existing.rows[0].value) {
+      try { granted = JSON.parse(existing.rows[0].value) || []; } catch { granted = String(existing.rows[0].value).split(','); }
+    }
+    const grantedSet = new Set(granted.map((u) => String(u).toLowerCase()));
+    const wanted = [...GIF_AVATAR_USERS];
+    const rows = await pool.query('SELECT LOWER(username) AS u FROM users WHERE LOWER(username) = ANY($1)', [wanted]);
+    const nowGrant = rows.rows.map((r) => r.u).filter((u) => !grantedSet.has(u));
+    if (nowGrant.length) {
+      await pool.query('UPDATE users SET gif_avatar=1 WHERE LOWER(username) = ANY($1)', [nowGrant]);
+      nowGrant.forEach((u) => grantedSet.add(u));
+      const value = JSON.stringify([...grantedSet].sort());
+      await pool.query('INSERT INTO app_settings(key,value) VALUES($1,$2) ON CONFLICT (key) DO UPDATE SET value=$2', [seedKey, value]);
+    }
+  } catch (e) {
+    console.error('[migração] gif_avatar:', e.message);
+  }
 
   // Migração: timestamps em milissegundos (Date.now()) não cabem em INTEGER (32 bits).
   // CREATE TABLE IF NOT EXISTS não altera tabelas que já existem, então é preciso
@@ -262,6 +294,23 @@ const kind = (f) => {
   if (VIDEO_EXT[e] || m.startsWith('video/')) return 'video';
   return 'image';
 };
+// Somente essas contas podem usar GIF como foto de perfil (ver definição no topo).
+const GIF_AVATAR_MAX = 5 * 1024 * 1024;
+// Detecta GIF pelos magic bytes, não pela extensão/mimetype, para bloquear arquivos renomeados.
+const isGifUpload = (f) => isValidGif(f);
+const isValidGif = (f) => {
+  try {
+    const buf = Buffer.alloc(6);
+    const fd = fs.openSync(f.path, 'r');
+    fs.readSync(fd, buf, 0, 6, 0);
+    fs.closeSync(fd);
+    const head = buf.toString('ascii');
+    return head === 'GIF87a' || head === 'GIF89a';
+  } catch { return false; }
+};
+const cleanupUpload = (f) => { try { if (f && f.path) fs.unlinkSync(f.path); } catch {} };
+const withPerms = (u) => (u ? { ...u, gif_avatar: Number(u.gif_avatar) || 0 } : u);
+
 const up = multer({
   storage: multer.diskStorage({
     destination: path.join(__dirname, 'uploads'),
@@ -314,7 +363,7 @@ const auth = async (req, res, next) => {
 
 const userById = async (id) => {
   return await get(
-    'SELECT id,username,name,bio,avatar,private,verified,verified_color,song_title,song_artist,song_url,song_art,song_start,song_dur FROM users WHERE id=$1',
+    'SELECT id,username,name,bio,avatar,private,verified,verified_color,song_title,song_artist,song_url,song_art,song_start,song_dur,gif_avatar FROM users WHERE id=$1',
     [id]
   );
 };
@@ -368,7 +417,7 @@ app.post('/api/login', async (req, res) => {
 
 app.get('/api/me', auth, async (req, res) => {
   const u = await userById(req.user.id);
-  u ? res.json(u) : res.status(401).json({ error: 'Sessão expirada.' });
+  u ? res.json(withPerms(u)) : res.status(401).json({ error: 'Sessão expirada.' });
 });
 
 app.put('/api/me', auth, up.single('avatar'), async (req, res) => {
@@ -377,6 +426,16 @@ app.put('/api/me', auth, up.single('avatar'), async (req, res) => {
   const vcolor = /^#[0-9a-f]{6}$/i.test(vc) ? vc.toLowerCase() : '';
   const segStart = Math.max(0, Math.min(3600, parseInt(b.song_start, 10) || 0));
   const segDur = Math.max(0, Math.min(300, parseInt(b.song_dur, 10) || 0));
+
+  // Valida avatar antes de alterar qualquer dado
+  if (req.file && isGifUpload(req.file)) {
+    const u = await get('SELECT gif_avatar FROM users WHERE id=$1', [me]);
+    const ok = u && Number(u.gif_avatar) === 1;
+    const fail = (code, error) => { cleanupUpload(req.file); return res.status(code).json({ error }); };
+    if (req.file.size > GIF_AVATAR_MAX) return fail(400, 'O GIF deve ter no máximo 5 MB.');
+    if (!isValidGif(req.file)) return fail(400, 'Arquivo inválido: não é um GIF.');
+    if (!ok) return fail(403, 'Só @anarchy, @scorppionn e @horuswrld podem usar GIF como foto de perfil.');
+  }
 
   await run(
     'UPDATE users SET name=$1,bio=$2,private=$3,song_title=$4,song_artist=$5,song_url=$6,song_art=$7,verified_color=$8,song_start=$9,song_dur=$10 WHERE id=$11',
@@ -390,13 +449,13 @@ app.put('/api/me', auth, up.single('avatar'), async (req, res) => {
   }
 
   const u = await userById(me);
-  res.json(u);
+  res.json(withPerms(u));
 });
 
 app.post('/api/verify', auth, async (req, res) => {
   await run('UPDATE users SET verified=1-verified WHERE id=$1', [req.user.id]);
   const u = await userById(req.user.id);
-  res.json(u);
+  res.json(withPerms(u));
 });
 
 app.get('/api/badge-colors', auth, async (req, res) => {

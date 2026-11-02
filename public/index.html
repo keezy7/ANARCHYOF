@@ -887,6 +887,29 @@ function removeAccountUI(usernameVal) {
 /* ---------- Avatar Cropper ---------- */
 const AC = { file: null, img: null, x: 0, y: 0, scale: 1, rotating: false };
 
+function avatarPicked(input) {
+  const f = input.files && input.files[0];
+  if (!f) return;
+  const isGif = String(f.type).toLowerCase() === 'image/gif' || /\.gif$/i.test(f.name || '');
+  if (isGif) {
+    if (!me || !me.gif_avatar) {
+      toast('Só @anarchy, @scorppionn e @horuswrld podem usar GIF como foto de perfil.');
+      input.value = '';
+      return;
+    }
+    if (f.size > 5 * 1024 * 1024) {
+      toast('O GIF deve ter no máximo 5 MB.');
+      input.value = '';
+      return;
+    }
+    const preview = document.getElementById('eaPreview');
+    if (preview) preview.innerHTML = `<img src="${URL.createObjectURL(f)}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:2px solid var(--blue)" alt="Prévia do GIF"><small style="display:block;color:var(--mute);margin-top:.3rem">GIF animado — sem recorte, salvo como está.</small>`;
+    toast('GIF selecionado');
+    return;
+  }
+  openAvatarCropper(input);
+}
+
 function openAvatarCropper(input) {
   const f = input.files[0]; if (!f) return;
   AC.file = f;
@@ -1531,7 +1554,8 @@ async function deleteAccount() {
 function editProfile() {
   song = { song_title: me.song_title, song_artist: me.song_artist, song_url: me.song_url, song_art: me.song_art, song_start: me.song_start || 0, song_dur: me.song_dur || 0 };
   const vc = /^#[0-9a-f]{6}$/i.test(me.verified_color || '') ? me.verified_color : '#ff2d2d';
-  modal(`<h3>Editar perfil</h3><label>Foto de perfil</label><input type="file" id="ea" accept="image/*" onchange="openAvatarCropper(this)">
+  modal(`<h3>Editar perfil</h3><label>Foto de perfil</label><input type="file" id="ea" accept="image/*" onchange="avatarPicked(this)">
+${me.gif_avatar ? '<small style="color:var(--mute)">Sua conta pode usar GIF animado (máx. 5 MB).</small>' : ''}
   <div id="eaPreview" style="margin:.5rem 0"></div>
   <label>Nome</label><input id="en" maxlength="40" value="${esc(me.name)}"><label>Biografia</label><textarea id="eb" maxlength="150">${esc(me.bio)}</textarea>
   <label>Música da bio (prévia de 30s)</label><div class="row"><input id="eq" placeholder="Buscar música ou artista"><button class="gh" onclick="findSong()">Buscar</button></div>
