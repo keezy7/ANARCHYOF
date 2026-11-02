@@ -285,6 +285,12 @@ for (const m of ['get', 'post', 'put', 'delete', 'patch']) {
 const server = http.createServer(app);
 const io = new Server(server);
 app.use(express.json());
+// manifest declarado explicitamente para garantir o Content-Type correto do PWA
+app.get('/manifest.json', (req, res) => {
+  res.type('application/manifest+json')
+    .set('Cache-Control', 'public, max-age=3600')
+    .sendFile(path.join(__dirname, 'public', 'manifest.json'));
+});
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
