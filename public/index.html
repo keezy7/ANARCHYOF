@@ -552,7 +552,7 @@ function markNav() {
   document.querySelectorAll('.nv').forEach((b) => b.classList.toggle('on', panel ? b.dataset.p === panel : b.dataset.v === view));
 }
 async function badges(local) {
-  const set = (id, n) => { const e = $(id); if (!e) return; e.textContent = n > 9 ? '9+' : n; e.classList.toggle('hide', !n); };
+  const set = (id, n) => { const e = $(id); if (!e) return; e.textContent = n > 8 ? '9+' : n; e.classList.toggle('hide', !n); };
   set('bd-m', unread); set('bd-p', unread);
   if (local) return;
   try { set('bd-n', (await api('/api/notifs/count')).n); } catch {}
@@ -1506,7 +1506,7 @@ async function loadChatList() {
     unread = chatUsers.reduce((a, u) => a + (Number(u.unread) || 0), 0); badges(true);
     $('cl').innerHTML = '<h3>Mensagens</h3>' + (chatUsers.map((u) => {
       const n = Number(u.unread) || 0;
-      return `<div class="rq${n ? ' unread' : ''}" data-id="${u.id}" role="button" tabindex="0" onclick="openChat(${u.id},'${esc(u.username)}')">${av(u, 48)}<span>${ul(u.username, `<b>${esc(u.username)}${vf(u.verified, u.username, u.verified_color)}</b>`)}<small class="pv">${chatPreview(u)}</small></span>${n ? `<em class="cbd" title="${n} mensagens novas">${n > 9 ? '9+' : n}</em>` : ''}</div>`;
+      return `<div class="rq${n ? ' unread' : ''}" data-id="${u.id}" role="button" tabindex="0" onclick="openChat(${u.id},'${esc(u.username)}')">${av(u, 48)}<span>${ul(u.username, `<b>${esc(u.username)}${vf(u.verified, u.username, u.verified_color)}</b>`)}<small class="pv">${chatPreview(u)}</small></span>${n ? `<em class="cbd" title="${n} mensagens novas">${n > 8 ? '9+' : n}</em>` : ''}</div>`;
     }).join('') || '<p class="empty">Siga alguém para começar uma conversa.</p>');
     if (peer) document.querySelectorAll('#cl .rq').forEach((b) => b.classList.toggle('on', +b.dataset.id === peer.id));
   } catch {
