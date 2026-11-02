@@ -297,6 +297,7 @@ const IC = {
   smile: '<circle cx="12" cy="12" r="10"/><path d="M10 15c.4 0 .8-.1 1.2-.3l1.5-1.5c.6-.6 1.5-.6 2.1 0l1.5 1.5c.3.1.7.3 1.2.3"/><circle cx="9.5" cy="9.5" r="1.5"/><circle cx="14.5" cy="9.5" r="1.5"/>',
   download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>',
   lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+  expand: '<path d="M8 3H5a2 2 0 0 0-2 2v3M21 3h-3a2 2 0 0 0-2 2v3M3 16h3a2 2 0 0 0 2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/>',
 };
 const I = (n, s = 24) => `<svg class="ic" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${IC[n]}</svg>`;
 const media = (p, full) => (p.type === 'video'
@@ -306,9 +307,14 @@ const media = (p, full) => (p.type === 'video'
 async function api(url, o = {}) {
   o.headers = { ...(o.headers || {}), Authorization: 'Bearer ' + token };
   if (o.json) { o.body = JSON.stringify(o.json); o.headers['Content-Type'] = 'application/json'; o.method = o.method || 'POST'; }
-  const r = await fetch(url, o), d = await r.json();
+  const r = await fetch(url, o);
+  let d;
+  try { d = await r.json(); } catch {
+    const t = await r.text().catch(() => '');
+    throw new Error(t || `Erro ${r.status} (resposta não-JSON).`);
+  }
   if (r.status === 401 && token) logout();
-  if (!r.ok) throw new Error(d.error || 'Algo deu errado.');
+  if (!r.ok) throw new Error(d.error || `Erro ${r.status}.`);
   return d;
 }
 
@@ -476,7 +482,7 @@ const tagsLine = (p) => (p.tags && p.tags.length ? `<p class="tg"><small>com</sm
 const cmts = (p, full) => {
   const list = full ? p.comments : p.comments.slice(-2);
   return (!full && p.ncomments > 2 ? `<span class="more" onclick="openPost(${p.id})">Ver todos os ${p.ncomments} comentários</span>` : '')
-    + list.map((c) => `<p data-cid="${c.id}"><b>${esc(c.username)}</b>${vf(c.verified)} <span class="ct">${linkify(esc(c.text))}</span>${c.edited_at ? ' <small class="ed" style="color:var(--mute)">editado</small>' : ''}
+    + list.map((c) => `<p data-cid="${c.id}"><b onclick="go('profile','${c.username}')" style="cursor:pointer">${esc(c.username)}</b>${vf(c.verified)} <span class="ct">${linkify(esc(c.text))}</span>${c.edited_at ? ' <small class="ed" style="color:var(--mute)">editado</small>' : ''}
       ${c.user_id === me.id ? `<button class="gh" onclick="editComment(${p.id},${c.id},this)" style="font-size:.7rem;padding:.15rem .5rem;border-radius:6px;margin-left:.4rem">Editar</button><button class="gh" onclick="deleteComment(${p.id},${c.id})" style="font-size:.7rem;padding:.15rem .5rem;border-radius:6px;margin-left:.3rem">Excluir</button>` : ''}</p>`).join('');
 };
 function postCard(p, i = 0) {
@@ -486,7 +492,7 @@ function postCard(p, i = 0) {
     <div class="who"><b onclick="go('profile','${p.username}')">${esc(p.username)}</b>${vf(p.verified)}<small> • ${rt(p.created)}</small>
     ${p.orig ? `<div class="ro">↻ republicado de @${esc(p.orig)}</div>` : ''}</div>
     <button class="mo" onclick="postMenu(${p.id})" aria-label="Mais">${I('dots', 22)}</button></div>
-  <div class="pm" ondblclick="dbl(${p.id},this)">${media(p)}</div>
+  <div class="pm" ondblclick="dbl(${p.id},this)">${media(p)}${p.type === 'image' ? `<button class="ib" style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,.55);color:#fff;border-radius:50%;width:30px;height:30px;z-index:4;font-size:16px" onclick="event.stopPropagation();openImageFull('${esc(p.media)}')">${I('expand', 18)}</button>` : ''}</div>
   <div class="pa" data-pa="${p.id}">${acts(p)}</div>
   <div class="pb"><div class="pl" data-pl="${p.id}">${likesTxt(p)}</div>
     ${tagsLine(p)}
@@ -680,6 +686,12 @@ async function profile(name) {
   if (self) { me = u; renderSide(); }
   if (lastProf !== u.username) { curTab = 'feed'; lastProf = u.username; }
   const reqs = self ? await api('/api/requests') : [];
+  // verificar se o usuário tem story ativo (indicador no perfil)
+  let hasStory = false;
+  try {
+    const st = await api('/api/stories');
+    hasStory = st.some((g) => g.uid === u.id && g.items.some((s) => !s.expired && s.expires_at > Date.now()));
+  } catch {}
   [...d.items, ...d.tagged].forEach((p) => { P[p.id] = p; });
   PD = {
     feed: d.items.filter((p) => !p.repost_of && p.type === 'image'),
@@ -690,7 +702,7 @@ async function profile(name) {
   const btns = self
     ? `<button class="gh" onclick="editProfile()">Editar perfil</button><button class="gh" onclick="changeUsernameUI()">Trocar username</button><button class="gh" onclick="shareProfile('${u.username}')">Compartilhar perfil</button>`
     : `<button class="${d.rel === 'none' ? 'bl' : 'gh'}" onclick="follow(${u.id},'${u.username}')">${RL[d.rel]}</button><button class="gh" onclick="openChat(${u.id},'${u.username}')">Mensagem</button><button class="gh" onclick="blockUser(${u.id})">Bloquear @${esc(u.username)}</button>`;
-  $('view').innerHTML = `<div class="prof"><div class="pt">${av(u, 150)}<div class="pi">
+  $('view').innerHTML = `<div class="prof"><div class="pt">${hasStory ? `<div class="ring" style="display:inline-block;margin-right:8px">${av(u, 156)}</div>` : av(u, 150)}<div class="pi">
       <div class="row"><h2>${esc(u.username)}${vf(u.verified)}</h2>${u.private ? `<small title="Conta privada">${I('lock', 16)}</small>` : ''}</div>
       <div class="cnt"><span><b>${d.count.posts}</b> posts</span><span><b>${d.count.followers}</b> seguidores</span><span><b>${d.count.following}</b> seguindo</span></div>
       <div class="bio"><b>${esc(u.name || '')}</b><p>${linkify(esc(u.bio || ''))}</p>
@@ -933,7 +945,12 @@ async function loadStoryReactions(storyId) {
 
 // ---- Visualizacoes de Story ----
 async function viewStory(storyId) {
-  try { await api(`/api/stories/${storyId}/view`, { method: 'POST' }); } catch {}
+  try { 
+    await api(`/api/stories/${storyId}/view`, { method: 'POST' });
+    // marca localmente como visto para não reaparecer ao recarregar nesta sessão
+    G.forEach((g) => { g.items.forEach((s) => { if (s.id === storyId) g.seen = true; }); });
+    if (panel === 'notifs') loadNotifs();
+  } catch {}
 }
 async function getStoryViews(storyId) {
   try { const r = await api(`/api/stories/${storyId}/views`); modal(`<h3>Visualizacoes</h3><p><b>${r.count}</b> perfil${r.count !== 1 ? 'is' : 'il'} viram esta story.</p>${r.viewers.map((v) => `<div class="rq">${av(v, 40)}<span><b>${esc(v.username)}${vf(v.verified)}</b><small>${rt(v.viewed_at)}</small></span></div>`).join('')}`); } catch (e) { toast(e.message); }
@@ -994,6 +1011,11 @@ async function pickDMFile() {
 // ---- Baixar Post / Story ----
 function downloadMedia(kind, id) {
   window.location.href = `/api/download/${kind}/${id}`;
+}
+
+// ---- Ver imagem em tela cheia (crop/zoom) ----
+function openImageFull(src) {
+  modal(`<div class="ov dark" style="place-items:center;padding:0"><img src="${esc(src)}" style="max-width:95vw;max-height:90vh;border-radius:12px;object-fit:contain"><button onclick="closeM()" style="position:absolute;top:12px;right:12px;color:#fff;font-size:24px">${I('x', 24)}</button></div>`);
 }
 
 // ============ FIM NOVAS FUNCIONALIDADES ============
