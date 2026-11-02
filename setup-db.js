@@ -161,6 +161,28 @@ const pool = new Pool({
     await addCol('notifs', 'story_id', 'INTEGER');
     await addCol('notifs', 'text', "TEXT DEFAULT ''");
 
+    // Migração: timestamps em milissegundos (Date.now()) não cabem em INTEGER (32 bits).
+    // Necessário em bancos que já existiam antes da correção para BIGINT.
+    const bigintCols = [
+      ['users', 'last_username_change'],
+      ['pinned_chats', 'pinned_at'],
+      ['posts', 'created'], ['posts', 'edited_at'],
+      ['comments', 'created'], ['comments', 'edited_at'],
+      ['stories', 'created'], ['stories', 'expires_at'],
+      ['story_views', 'viewed_at'],
+      ['story_reactions', 'created'],
+      ['messages', 'created'], ['messages', 'edited_at'],
+      ['notifs', 'created'],
+      ['chat_reads', 'last_read'],
+    ];
+    for (const [table, col] of bigintCols) {
+      try {
+        await pool.query(`ALTER TABLE ${table} ALTER COLUMN ${col} TYPE BIGINT`);
+      } catch (e) {
+        console.error(`[migração] ${table}.${col}:`, e.message);
+      }
+    }
+
     console.log('Banco configurado com sucesso!');
     process.exit(0);
   } catch (e) {

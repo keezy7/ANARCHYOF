@@ -46,7 +46,7 @@ async function initDb() {
       song_start INTEGER DEFAULT 0,
       song_dur INTEGER DEFAULT 0,
       username_change_count INTEGER DEFAULT 0,
-      last_username_change INTEGER DEFAULT 0,
+      last_username_change BIGINT DEFAULT 0,
       deactivated INTEGER DEFAULT 0
     );
     CREATE TABLE IF NOT EXISTS follows(
@@ -63,7 +63,7 @@ async function initDb() {
     CREATE TABLE IF NOT EXISTS pinned_chats(
       user_id INTEGER,
       peer_id INTEGER,
-      pinned_at INTEGER NOT NULL,
+      pinned_at BIGINT NOT NULL,
       PRIMARY KEY(user_id, peer_id)
     );
     CREATE TABLE IF NOT EXISTS posts(
@@ -73,11 +73,11 @@ async function initDb() {
       media TEXT,
       type TEXT,
       repost_of INTEGER,
-      created INTEGER NOT NULL,
+      created BIGINT NOT NULL,
       song_preview TEXT DEFAULT '',
       song_duration INTEGER DEFAULT 0,
       deleted INTEGER DEFAULT 0,
-      edited_at INTEGER DEFAULT 0,
+      edited_at BIGINT DEFAULT 0,
       pinned INTEGER DEFAULT 0
     );
     CREATE TABLE IF NOT EXISTS likes(
@@ -90,8 +90,8 @@ async function initDb() {
       post_id INTEGER NOT NULL,
       user_id INTEGER NOT NULL,
       text TEXT NOT NULL,
-      created INTEGER NOT NULL,
-      edited_at INTEGER DEFAULT 0,
+      created BIGINT NOT NULL,
+      edited_at BIGINT DEFAULT 0,
       deleted INTEGER DEFAULT 0
     );
     CREATE TABLE IF NOT EXISTS stories(
@@ -99,15 +99,15 @@ async function initDb() {
       user_id INTEGER NOT NULL,
       media TEXT,
       type TEXT,
-      created INTEGER NOT NULL,
-      expires_at INTEGER DEFAULT 0,
+      created BIGINT NOT NULL,
+      expires_at BIGINT DEFAULT 0,
       mentions TEXT DEFAULT ''
     );
     CREATE TABLE IF NOT EXISTS story_views(
       id SERIAL PRIMARY KEY,
       story_id INTEGER,
       viewer_id INTEGER,
-      viewed_at INTEGER NOT NULL,
+      viewed_at BIGINT NOT NULL,
       is_unique INTEGER DEFAULT 1
     );
     CREATE TABLE IF NOT EXISTS story_reactions(
@@ -116,7 +116,7 @@ async function initDb() {
       user_id INTEGER,
       type TEXT NOT NULL,
       text TEXT DEFAULT '',
-      created INTEGER NOT NULL
+      created BIGINT NOT NULL
     );
     CREATE TABLE IF NOT EXISTS messages(
       id SERIAL PRIMARY KEY,
@@ -126,8 +126,8 @@ async function initDb() {
       post_id INTEGER,
       media TEXT,
       type TEXT,
-      created INTEGER NOT NULL,
-      edited_at INTEGER DEFAULT 0,
+      created BIGINT NOT NULL,
+      edited_at BIGINT DEFAULT 0,
       deleted INTEGER DEFAULT 0
     );
     CREATE TABLE IF NOT EXISTS tags(
@@ -142,13 +142,13 @@ async function initDb() {
       type TEXT NOT NULL,
       post_id INTEGER,
       story_id INTEGER,
-      created INTEGER NOT NULL,
+      created BIGINT NOT NULL,
       seen INTEGER DEFAULT 0
     );
     CREATE TABLE IF NOT EXISTS chat_reads(
       user_id INTEGER,
       peer_id INTEGER,
-      last_read INTEGER NOT NULL,
+      last_read BIGINT NOT NULL,
       PRIMARY KEY(user_id, peer_id)
     );
   `);
@@ -160,7 +160,7 @@ async function initDb() {
   };
 
   await addCol('users', 'username_change_count', 'INTEGER DEFAULT 0');
-  await addCol('users', 'last_username_change', 'INTEGER DEFAULT 0');
+  await addCol('users', 'last_username_change', 'BIGINT DEFAULT 0');
   await addCol('users', 'verified_color', "TEXT DEFAULT ''");
   await addCol('users', 'song_start', 'INTEGER DEFAULT 0');
   await addCol('users', 'song_dur', 'INTEGER DEFAULT 0');
@@ -168,18 +168,41 @@ async function initDb() {
   await addCol('posts', 'song_preview', "TEXT DEFAULT ''");
   await addCol('posts', 'song_duration', 'INTEGER DEFAULT 0');
   await addCol('posts', 'deleted', 'INTEGER DEFAULT 0');
-  await addCol('posts', 'edited_at', 'INTEGER DEFAULT 0');
+  await addCol('posts', 'edited_at', 'BIGINT DEFAULT 0');
   await addCol('posts', 'pinned', 'INTEGER DEFAULT 0');
-  await addCol('comments', 'edited_at', 'INTEGER DEFAULT 0');
+  await addCol('comments', 'edited_at', 'BIGINT DEFAULT 0');
   await addCol('comments', 'deleted', 'INTEGER DEFAULT 0');
-  await addCol('stories', 'expires_at', 'INTEGER DEFAULT 0');
+  await addCol('stories', 'expires_at', 'BIGINT DEFAULT 0');
   await addCol('stories', 'mentions', "TEXT DEFAULT ''");
   await addCol('messages', 'media', 'TEXT DEFAULT \'\'');
   await addCol('messages', 'type', 'TEXT DEFAULT \'\'');
-  await addCol('messages', 'edited_at', 'INTEGER DEFAULT 0');
+  await addCol('messages', 'edited_at', 'BIGINT DEFAULT 0');
   await addCol('messages', 'deleted', 'INTEGER DEFAULT 0');
   await addCol('notifs', 'story_id', 'INTEGER');
   await addCol('notifs', 'text', "TEXT DEFAULT ''");
+
+  // Migração: timestamps em milissegundos (Date.now()) não cabem em INTEGER (32 bits).
+  // CREATE TABLE IF NOT EXISTS não altera tabelas que já existem, então é preciso
+  // converter as colunas em bancos antigos. ALTER COLUMN TYPE é idempotente.
+  const bigintCols = [
+    ['users', 'last_username_change'],
+    ['pinned_chats', 'pinned_at'],
+    ['posts', 'created'], ['posts', 'edited_at'],
+    ['comments', 'created'], ['comments', 'edited_at'],
+    ['stories', 'created'], ['stories', 'expires_at'],
+    ['story_views', 'viewed_at'],
+    ['story_reactions', 'created'],
+    ['messages', 'created'], ['messages', 'edited_at'],
+    ['notifs', 'created'],
+    ['chat_reads', 'last_read'],
+  ];
+  for (const [table, col] of bigintCols) {
+    try {
+      await pool.query(`ALTER TABLE ${table} ALTER COLUMN ${col} TYPE BIGINT`);
+    } catch (e) {
+      console.error(`[migração] ${table}.${col}:`, e.message);
+    }
+  }
 
   try {
     await pool.query("UPDATE comments SET text=substr(text,1,length(text)-10) WHERE edited_at>0 AND text LIKE '% (editado)'");
@@ -248,6 +271,16 @@ const up = multer({
 });
 
 const app = express();
+
+// Express 4 não captura rejeições de handlers async: sem isso, um erro de banco
+// deixa a requisição pendurada (e pode derrubar o processo). Encaminha pro handler de erro.
+for (const m of ['get', 'post', 'put', 'delete', 'patch']) {
+  const orig = app[m].bind(app);
+  app[m] = (p, ...hs) => orig(p, ...hs.map((h) => (typeof h === 'function' && h.length < 4
+    ? (req, res, next) => Promise.resolve(h(req, res, next)).catch((e) => { console.error('[erro]', e); next(e); })
+    : h)));
+}
+
 const server = http.createServer(app);
 const io = new Server(server);
 app.use(express.json());
@@ -559,7 +592,7 @@ app.post('/api/posts', auth, up.single('media'), async (req, res) => {
 
   const tags = await parseTags(req.body.tags, caption, req.user.id);
   for (const uid of tags) {
-    await run('INSERT OR IGNORE INTO tags VALUES($1,$2)', [pid, uid]);
+    await run('INSERT INTO tags(post_id,user_id) VALUES($1,$2) ON CONFLICT DO NOTHING', [pid, uid]);
     await notify(uid, req.user.id, 'tag', pid);
   }
 
@@ -578,7 +611,7 @@ app.post('/api/posts/:id/tag', auth, async (req, res) => {
   const user = await get('SELECT id FROM users WHERE LOWER(username)=$1', [String(username).replace(/^@/, '').toLowerCase()]);
   if (!user) return res.status(404).json({ error: 'Usuário não encontrado.' });
 
-  await run('INSERT OR IGNORE INTO tags VALUES($1,$2)', [pid, user.id]);
+  await run('INSERT INTO tags(post_id,user_id) VALUES($1,$2) ON CONFLICT DO NOTHING', [pid, user.id]);
   await notify(user.id, me, 'tag', pid);
   res.json({ ok: true });
 });
@@ -601,7 +634,7 @@ app.post('/api/posts/:id/like', auth, async (req, res) => {
   const deleted = await run('DELETE FROM likes WHERE user_id=$1 AND post_id=$2', a);
 
   if (!deleted.rowCount) {
-    await run('INSERT OR IGNORE INTO likes VALUES($1,$2)', a);
+    await run('INSERT INTO likes(user_id,post_id) VALUES($1,$2) ON CONFLICT DO NOTHING', a);
     if (owner) await notify(owner.user_id, req.user.id, 'like', +req.params.id);
   } else {
     await run("DELETE FROM notifs WHERE actor_id=$1 AND post_id=$2 AND type='like'", a);
@@ -834,7 +867,7 @@ app.delete('/api/stories/:id', auth, async (req, res) => {
 app.post('/api/stories/:id/like', auth, async (req, res) => {
   const id = +req.params.id;
   const me = req.user.id;
-  await run('INSERT OR IGNORE INTO story_reactions(story_id,user_id,type,created) VALUES($1,$2,$3,$4)', [id, me, 'like', Date.now()]);
+  await run('INSERT INTO story_reactions(story_id,user_id,type,created) VALUES($1,$2,$3,$4) ON CONFLICT DO NOTHING', [id, me, 'like', Date.now()]);
   res.json({ ok: true });
 });
 
