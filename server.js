@@ -18,7 +18,9 @@ db.exec(`
 PRAGMA journal_mode = WAL;
 CREATE TABLE IF NOT EXISTS users(id INTEGER PRIMARY KEY, username TEXT UNIQUE NOT NULL, password TEXT NOT NULL,
   name TEXT DEFAULT '', bio TEXT DEFAULT '', avatar TEXT, private INTEGER DEFAULT 0, verified INTEGER DEFAULT 0,
+  verified_color TEXT DEFAULT '',
   song_title TEXT DEFAULT '', song_artist TEXT DEFAULT '', song_url TEXT DEFAULT '', song_art TEXT DEFAULT '',
+  song_start INTEGER DEFAULT 0, song_dur INTEGER DEFAULT 0,
   username_change_count INTEGER DEFAULT 0, last_username_change INTEGER DEFAULT 0);
 CREATE TABLE IF NOT EXISTS follows(follower INTEGER, followee INTEGER, status TEXT, PRIMARY KEY(follower, followee));
 CREATE TABLE IF NOT EXISTS blocked_users(blocker INTEGER, blocked INTEGER, PRIMARY KEY(blocker, blocked));
@@ -35,6 +37,7 @@ CREATE TABLE IF NOT EXISTS messages(id INTEGER PRIMARY KEY, from_id INTEGER NOT 
   edited_at INTEGER DEFAULT 0, deleted INTEGER DEFAULT 0);
 CREATE TABLE IF NOT EXISTS tags(post_id INTEGER, user_id INTEGER, PRIMARY KEY(post_id, user_id));
 CREATE TABLE IF NOT EXISTS notifs(id INTEGER PRIMARY KEY, user_id INTEGER NOT NULL, actor_id INTEGER NOT NULL, type TEXT NOT NULL, post_id INTEGER, story_id INTEGER, created INTEGER NOT NULL, seen INTEGER DEFAULT 0);
+CREATE TABLE IF NOT EXISTS chat_reads(user_id INTEGER, peer_id INTEGER, last_read INTEGER NOT NULL, PRIMARY KEY(user_id, peer_id));
 `);
 
 // Migraçăo: adicionar colunas novas em tabelas existentes (se faltarem)
@@ -43,6 +46,9 @@ const addCol = (table, col, def) => {
 };
 addCol('users', 'username_change_count', 'INTEGER DEFAULT 0');
 addCol('users', 'last_username_change', 'INTEGER DEFAULT 0');
+addCol('users', 'verified_color', "TEXT DEFAULT ''");
+addCol('users', 'song_start', 'INTEGER DEFAULT 0');
+addCol('users', 'song_dur', 'INTEGER DEFAULT 0');
 addCol('posts', 'song_preview', "TEXT DEFAULT ''");
 addCol('posts', 'song_duration', 'INTEGER DEFAULT 0');
 addCol('posts', 'deleted', 'INTEGER DEFAULT 0');
@@ -134,7 +140,7 @@ const auth = (req, res, next) => {
   catch { res.status(401).json({ error: 'Faça login para continuar.' }); }
 };
 
-const userById = (id) => Q('SELECT id,username,name,bio,avatar,private,verified,song_title,song_artist,song_url,song_art FROM users WHERE id=?').get(id);
+const userById = (id) => Q('SELECT id,username,name,bio,avatar,private,verified,verified_color,song_title,song_artist,song_url,song_art,song_start,song_dur FROM users WHERE id=?').get(id);
 const rel = (me, id) => (me === id ? 'self' : (Q('SELECT status FROM follows WHERE follower=? AND followee=?').get(me, id) || {}).status || 'none');
 const canSee = (me, u) => isBlocked(me, u.id) ? false : (!u.private || ['self', 'ok'].includes(rel(me, u.id)));
 const num = (s, ...a) => Q(s).get(...a).n;
@@ -194,15 +200,24 @@ app.get('/api/me', auth, (req, res) => {
 });
 app.put('/api/me', auth, up.single('avatar'), (req, res) => {
   const b = req.body, me = req.user.id;
-  Q('UPDATE users SET name=?,bio=?,private=?,song_title=?,song_artist=?,song_url=?,song_art=? WHERE id=?').run(
+  const vc = String(b.verified_color || '').trim();
+  const vcolor = /^#[0-9a-f]{6}$/i.test(vc) ? vc.toLowerCase() : '';
+  const segStart = Math.max(0, Math.min(3600, parseInt(b.song_start, 10) || 0));
+  const segDur = Math.max(0, Math.min(300, parseInt(b.song_dur, 10) || 0));
+  Q('UPDATE users SET name=?,bio=?,private=?,song_title=?,song_artist=?,song_url=?,song_art=?,verified_color=?,song_start=?,song_dur=? WHERE id=?').run(
     (b.name || '').slice(0, 40), (b.bio || '').slice(0, 150), b.private === '1' ? 1 : 0,
-    (b.song_title || '').slice(0, 100), (b.song_artist || '').slice(0, 100), httpsOnly(b.song_url), httpsOnly(b.song_art), me);
+    (b.song_title || '').slice(0, 100), (b.song_artist || '').slice(0, 100), httpsOnly(b.song_url), httpsOnly(b.song_art),
+    vcolor, segStart, segDur, me);
   if (req.file && kind(req.file) === 'image') Q('UPDATE users SET avatar=? WHERE id=?').run('/uploads/' + req.file.filename, me);
   res.json(userById(me));
 });
 app.post('/api/verify', auth, (req, res) => { // assinatura gratuita do selo
   Q('UPDATE users SET verified=1-verified WHERE id=?').run(req.user.id);
   res.json(userById(req.user.id));
+});
+app.get('/api/badge-colors', auth, (req, res) => { // cores personalizadas dos selos verificados
+  res.set('Cache-Control', 'no-store');
+  res.json(Q("SELECT LOWER(username) AS username, verified_color FROM users WHERE verified=1 AND verified_color<>''").all());
 });
 
 // ---------- Perfis e seguidores ----------
@@ -380,9 +395,32 @@ app.get('/api/stories', auth, (req, res) => {
 // ---------- Mensagens ----------
 app.get('/api/chats', auth, (req, res) => {
   const me = req.user.id;
-  res.json(Q(`SELECT id,username,avatar,verified FROM users WHERE id<>? AND (
-    id IN (SELECT followee FROM follows WHERE follower=? AND status='ok') OR id IN (SELECT to_id FROM messages WHERE from_id=?)
-    OR id IN (SELECT from_id FROM messages WHERE to_id=?)) ORDER BY (id IN (SELECT peer_id FROM pinned_chats WHERE user_id=?)) DESC, id ASC`).all(me, me, me, me, me));
+  res.json(Q(`SELECT u.id,u.username,u.avatar,u.verified,
+    lm.created AS last, lm.text AS last_text, lm.type AS last_type, lm.from_id AS last_from,
+    COALESCE(rd.unread,0) AS unread,
+    (u.id IN (SELECT peer_id FROM pinned_chats WHERE user_id=?)) AS pinned
+    FROM users u
+    LEFT JOIN messages lm ON lm.id = (
+      SELECT m2.id FROM messages m2 WHERE m2.deleted=0 AND
+        ((m2.from_id=? AND m2.to_id=u.id) OR (m2.from_id=u.id AND m2.to_id=?))
+      ORDER BY m2.id DESC LIMIT 1)
+    LEFT JOIN (
+      SELECT m.from_id AS peer, COUNT(*) AS unread FROM messages m
+      WHERE m.deleted=0 AND m.to_id=?
+        AND m.created > COALESCE((SELECT r.last_read FROM chat_reads r WHERE r.user_id=? AND r.peer_id=m.from_id),0)
+      GROUP BY m.from_id) rd ON rd.peer=u.id
+    WHERE u.id<>? AND (
+      u.id IN (SELECT followee FROM follows WHERE follower=? AND status='ok')
+      OR u.id IN (SELECT to_id FROM messages WHERE from_id=?)
+      OR u.id IN (SELECT from_id FROM messages WHERE to_id=?))
+    ORDER BY pinned DESC, COALESCE(lm.created,0) DESC, u.id ASC`).all(me, me, me, me, me, me, me, me, me));
+});
+app.post('/api/chat/read/:id', auth, (req, res) => {
+  const me = req.user.id, peerId = +req.params.id;
+  if (!Number.isFinite(peerId) || !userById(peerId)) return res.status(404).json({ error: 'Usuário não encontrado.' });
+  Q(`INSERT INTO chat_reads(user_id,peer_id,last_read) VALUES(?,?,?)
+     ON CONFLICT(user_id,peer_id) DO UPDATE SET last_read=excluded.last_read`).run(me, peerId, Date.now());
+  res.json({ ok: true });
 });
 app.get('/api/messages/:id', auth, (req, res) => {
   const me = req.user.id, o = req.params.id;
@@ -615,6 +653,7 @@ app.delete('/api/chat/:id', auth, (req, res) => {
   const peerId = +req.params.id, me = req.user.id;
   Q('DELETE FROM messages WHERE (from_id=? AND to_id=?) OR (from_id=? AND to_id=?)').run(me, peerId, peerId, me);
   Q('DELETE FROM pinned_chats WHERE user_id=? AND peer_id=?').run(me, peerId);
+  Q('DELETE FROM chat_reads WHERE user_id=? AND peer_id=?').run(me, peerId);
   res.json({ ok: true });
 });
 

@@ -56,6 +56,12 @@ textarea{resize:vertical;min-height:70px;margin:.5rem 0}
 #auth img{width:110px;border-radius:24%}
 #auth h1{font-size:2.6rem;font-weight:800;letter-spacing:-.04em;margin:.4rem 0 1rem;background:var(--g);-webkit-background-clip:text;background-clip:text;color:transparent}
 #auth input{margin-bottom:.6rem}#auth .row button{flex:1}
+.pw{position:relative;margin-bottom:.6rem}
+#auth .pw input{margin-bottom:0;padding-right:2.9rem}
+.pwt{position:absolute;right:.4rem;top:50%;transform:translateY(-50%);width:30px;height:30px;border-radius:50%;display:grid;place-items:center;color:var(--mute)}
+.pwt:hover{background:var(--soft2);color:var(--ink)}
+#boot{position:fixed;inset:0;display:grid;place-items:center;background:var(--bg);z-index:300}
+#boot img{width:86px;height:auto;border-radius:24%;animation:float 2.4s ease-in-out infinite}
 
 /* ---------- barra lateral ---------- */
 #side{position:fixed;left:0;top:0;bottom:0;width:72px;border-right:1px solid var(--line);padding:.8rem .65rem;display:flex;flex-direction:column;gap:.15rem;background:var(--bg);z-index:30;overflow:hidden;transition:width .28s var(--ease),box-shadow .28s}
@@ -187,6 +193,13 @@ main{margin-left:72px}
 .eg h3{margin:.3rem 0 0;font-size:1.9rem;font-weight:800}.eg p{margin:0;max-width:340px}
 .song{display:inline-flex;align-items:center;gap:.6rem;background:var(--soft);border-radius:20px;padding:.3rem .9rem .3rem .3rem;margin:.4rem 0}
 .song button{width:28px;height:28px;border-radius:50%;background:var(--ink);color:var(--bg)}.song img,.sa{width:32px;height:32px;border-radius:6px}.song>span:not(.av),.rq>span:not(.av){display:grid;line-height:1.15}
+/* seleção do trecho da música da bio */
+.seg{margin:.6rem 0;padding:.7rem .8rem;border:1px solid var(--line);border-radius:12px;background:var(--bg)}
+.segtrack{position:relative;height:6px;border-radius:4px;background:var(--soft2);overflow:hidden;margin:.6rem 0 .35rem}
+.segtrack i{position:absolute;top:0;bottom:0;background:var(--blue);border-radius:4px;transition:left .08s linear,width .08s linear}
+.seg input[type=range]{display:block;margin:.15rem 0;padding:0;border:0;background:none;box-shadow:none;accent-color:var(--blue);height:16px}
+.seg input[type=range]:focus{box-shadow:none;border:0}
+
 /* Novo design do player de áudio no DM (estilo azul da Image 2) */
 .audio-bubble{display:flex;flex-direction:column;align-items:flex-start;gap:.4rem;background:#4c5fff;color:#fff;border-radius:16px;padding:.7rem 1rem;max-width:260px;box-shadow:0 2px 8px rgba(0,0,0,.3)}
 .audio-player{display:flex;align-items:center;gap:.8rem;width:100%}
@@ -212,7 +225,7 @@ main{margin-left:72px}
 .box.sheet{width:min(400px,100%);padding:0;text-align:center}.box.sheet button{display:block;width:100%;padding:.95rem;border-bottom:1px solid var(--line)}.box.sheet button:last-child{border:0}.box.sheet button:hover{background:var(--soft2)}.box.sheet .rd{color:#ff5c6a;font-weight:700}
 #ask{z-index:90}.askb{width:min(360px,100%);text-align:center;padding:1.6rem 1.3rem 1.2rem}.askb p{margin:0 0 1.3rem;font-size:1.05rem;font-weight:700;line-height:1.35}.askb .row{justify-content:center;gap:.7rem}.askb .row button{flex:1;padding:.7rem 1rem}.askb .dg{background:var(--red)}.askb button:focus-visible{outline:2px solid #fff;outline-offset:2px}
 .box h3{margin:0 0 .6rem}.box label{display:block;margin:.7rem 0 .2rem;color:var(--mute)}.box label.chk{display:flex;gap:.5rem;align-items:center;color:var(--ink)}.chk input{width:auto}
-.box input,.box textarea{background:var(--bg)}
+.box input,.box textarea{background:var(--bg)}.box input[type=color]{width:46px;height:36px;padding:2px;cursor:pointer;background:var(--bg)}
 .drop{display:grid;place-items:center;min-height:210px;border:2px dashed var(--soft2);border-radius:14px;cursor:pointer;text-align:center;color:var(--mute);overflow:hidden;margin:0!important;transition:border-color .2s,background .2s}
 .drop:hover{border-color:var(--blue);background:rgba(76,95,255,.06)}.drop img,.drop video{width:100%;max-height:300px;object-fit:cover}
 .pdet{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(300px,1fr);height:min(86vh,680px)}
@@ -243,7 +256,12 @@ main{margin-left:72px}
 #chat{display:grid;grid-template-columns:320px minmax(0,1fr);width:calc(100% - 2rem);max-width:1400px;height:calc(100dvh - 2rem);min-height:420px;border:1px solid var(--line);border-radius:16px;overflow:hidden;margin:1rem auto}
 #cl{border-right:1px solid var(--line);overflow-y:auto;min-height:0;padding:.5rem;background:var(--soft)}
 #cl h3{margin:0 -.5rem .5rem;padding:.85rem .6rem .5rem;font-size:1.05rem;position:sticky;top:-.5rem;z-index:2;background:var(--soft)}
-#cl .rq{margin-bottom:.3rem}
+#cl .rq{margin-bottom:.3rem;align-items:center}
+#cl .rq .pv{display:block;font-size:.78rem;color:var(--mute);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+#cl .rq.unread .pv{color:var(--ink)}
+#cl .rq.unread b{color:#fff}
+.cbd{flex:none;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--red);color:#fff;font-size:11px;font-weight:800;display:grid;place-items:center;margin-left:.25rem;box-shadow:0 0 0 2px var(--soft);animation:ping .3s var(--ease)}
+#cl .rq.on .cbd{box-shadow:0 0 0 2px var(--soft2)}
 #room{display:flex;flex-direction:column;min-width:0;min-height:0;background:var(--bg)}
 .rh{display:flex;justify-content:space-between;align-items:center;gap:.6rem;padding:.9rem 1rem;border-bottom:1px solid var(--line);font-weight:700;flex:none}
 .rh .rhname{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}
@@ -267,7 +285,7 @@ main{margin-left:72px}
 #send{display:flex;gap:.5rem;padding:.7rem;border-top:1px solid var(--line);flex:none}
 #send input{min-width:0}
 .mp{width:200px;cursor:pointer;margin-bottom:.3rem}.mp img,.mp video{width:100%;border-radius:10px;max-height:240px;object-fit:cover;display:block}.mp small{color:inherit}
-@media(max-width:760px){#chat{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);width:100%;height:calc(100dvh - 60px);min-height:0;margin:0;border:0;border-radius:0}#room{height:auto;min-height:0}#cl{display:flex;overflow-x:auto;overflow-y:hidden;border:0;border-bottom:1px solid var(--line);flex:none;align-items:center;min-width:0;max-width:100%;padding:.35rem .4rem}#cl h3{display:none}#cl .rq{width:auto;margin:0 .2rem;flex:none;padding:.3rem .5rem;gap:.45rem}#cl .rq .av{width:34px!important;height:34px!important;font-size:14px!important}#cl .empty{padding:.8rem;margin:0}}
+@media(max-width:760px){#chat{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);width:100%;height:calc(100dvh - 60px);min-height:0;margin:0;border:0;border-radius:0}#room{height:auto;min-height:0}#cl{display:flex;overflow-x:auto;overflow-y:hidden;border:0;border-bottom:1px solid var(--line);flex:none;align-items:center;min-width:0;max-width:100%;padding:.35rem .4rem}#cl h3{display:none}#cl .rq{width:auto;margin:0 .2rem;flex:none;padding:.3rem .5rem;gap:.45rem}#cl .rq .pv{display:none}#cl .rq .cbd{position:absolute;top:1px;right:1px;margin:0;min-width:16px;height:16px;font-size:10px}#cl .rq{position:relative}#cl .rq .av{width:34px!important;height:34px!important;font-size:14px!important}#cl .empty{padding:.8rem;margin:0}}
 #pill{position:fixed;right:24px;bottom:24px;display:flex;align-items:center;gap:.8rem;background:var(--soft);padding:.7rem 1.1rem;border-radius:30px;font-weight:700;box-shadow:0 6px 30px rgba(0,0,0,.5);z-index:20;animation:slideUp .5s var(--ease)}
 #pill:hover{background:var(--soft2);transform:translateY(-2px)}
 @media(max-width:760px){#pill{display:none}}
@@ -276,11 +294,13 @@ main{margin-left:72px}
 </head>
 <body>
 
-<section id="auth">
+<div id="boot"><img src="/logo_anarchy.png" alt="Anarchy"></div>
+
+<section id="auth" class="hide">
   <img src="/logo_anarchy.png" alt="" style="width:110px;height:auto;border-radius:0;">
   <h1>Anarchy</h1>
   <input id="u" placeholder="Nome de usuário" autocomplete="username">
-  <input id="p" type="password" placeholder="Senha (mín. 6 caracteres)" autocomplete="current-password" onkeydown="if(event.key==='Enter')auth('login')">
+  <div class="pw"><input id="p" type="password" placeholder="Senha (mín. 6 caracteres)" autocomplete="current-password" onkeydown="if(event.key==='Enter')auth('login')"><button type="button" class="pwt" id="pt" onclick="togglePass()" aria-label="Mostrar senha" title="Mostrar senha"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
   <div class="row"><button class="bl" onclick="auth('login')">Entrar</button><button class="gh" onclick="auth('register')">Criar conta</button></div>
   <p class="err" id="aerr"></p>
 </section>
@@ -295,7 +315,7 @@ main{margin-left:72px}
 <script>
 let token = localStorage.token, me, sock, peer = null, pendingPeer = null, view = 'home', G = [], SR = [], song = {}, au, stRaf = 0, stClock = null, stGi = null, stSid = null, sT;
 let panel = null, nfAll = [], nfFilter = 'all', unread = 0, muted = true, curTab = 'feed', lastProf = null, PD = {}, JL = null;
-let chatUsers = [], chatLoadId = 0;
+let chatUsers = [], chatLoadId = 0, VCLR = {}, segAu = null;
 const dmSrc = new Map(), dmAudios = new Map();
 const P = {};
 const $ = (id) => document.getElementById(id);
@@ -309,7 +329,11 @@ const rt = (t) => {
   if (s < 604800) return Math.floor(s / 86400) + ' d'; if (s < 2592000) return Math.floor(s / 604800) + ' sem';
   return new Date(t).toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' });
 };
-const vf = (v) => (v ? '<span class="vf" title="Verificado">✓</span>' : '');
+const vf = (v, username) => {
+  if (!v) return '';
+  const c = username ? VCLR[String(username).toLowerCase()] : '';
+  return `<span class="vf" title="Verificado"${c ? ` style="background:${esc(c)}"` : ''}>✓</span>`;
+};
 const av = (u, s = 32) => (u && u.avatar
   ? `<img class="av" style="width:${s}px;height:${s}px" src="${u.avatar}" alt="">`
   : `<span class="av" style="width:${s}px;height:${s}px;font-size:${s / 2.2}px">${esc(((u && u.username) || '?')[0].toUpperCase())}</span>`);
@@ -338,6 +362,7 @@ const IC = {
   send: '<path d="M21.5 3 10.2 14.3"/><path d="M21.5 3l-6.8 18-4.5-6.7L3.5 9.8z"/>',
   search: '<circle cx="11" cy="11" r="7"/><path d="m20.5 20.5-4.6-4.6"/>',
   eye: '<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+  eyeoff: '<path d="M3 3l18 18"/><path d="M10.6 5.2A10.9 10.9 0 0 1 12 5c6.4 0 10 7 10 7a17.6 17.6 0 0 1-3.3 4.3M6.4 6.5A17.6 17.6 0 0 0 2 12s3.6 7 10 7a10.7 10.7 0 0 0 4.1-.8"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/>',
   heart: '<path d="M12 20.8S3.5 15.7 3.5 9.4A4.7 4.7 0 0 1 12 6.8a4.7 4.7 0 0 1 8.5 2.6c0 6.3-8.5 11.4-8.5 11.4z"/>',
   plus: '<path d="M12 4.5v15M4.5 12h15"/>',
   menu: '<path d="M4 6h16M4 12h16M4 18h16"/>',
@@ -404,6 +429,34 @@ function switchAccount(usernameVal) {
   }
 }
 
+function togglePass() {
+  const i = $('p'), b = $('pt');
+  if (!i || !b) return;
+  const show = i.type === 'password';
+  i.type = show ? 'text' : 'password';
+  b.innerHTML = I(show ? 'eyeoff' : 'eye', 20);
+  b.setAttribute('aria-label', show ? 'Ocultar senha' : 'Mostrar senha');
+  b.setAttribute('title', show ? 'Ocultar senha' : 'Mostrar senha');
+  i.focus();
+}
+
+function showAuth() {
+  const b = $('boot'); if (b) b.remove();
+  const a = $('auth'); if (a) a.classList.remove('hide');
+}
+
+async function loadBadgeColors() {
+  try {
+    const rows = await api('/api/badge-colors');
+    VCLR = {};
+    rows.forEach((r) => { if (/^#[0-9a-f]{6}$/i.test(r.verified_color || '')) VCLR[String(r.username).toLowerCase()] = r.verified_color; });
+  } catch { VCLR = {}; }
+}
+
+async function refreshUnread() {
+  try { const list = await api('/api/chats'); unread = list.reduce((a, u) => a + (u.unread || 0), 0); badges(); } catch {}
+}
+
 async function auth(k) {
   try {
     const r = await fetch('/api/' + k, { method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -422,19 +475,21 @@ function logout() {
   location.reload();
 }
 async function start() {
-  try { me = await api('/api/me'); } catch { return; }
+  try { me = await api('/api/me'); } catch { showAuth(); return; }
+  await loadBadgeColors();
+  const boot = $('boot'); if (boot) boot.remove();
   $('auth').classList.add('hide'); $('app').classList.remove('hide');
   renderSide();
   sock = io({ auth: { token } });
-  sock.on('msg', (m) => {
+  sock.on('msg', async (m) => {
     const other = m.from_id === me.id ? m.to_id : m.from_id;
-    if (view === 'chats' && peer && (m.from_id === peer.id || m.to_id === peer.id)) {
+    const active = view === 'chats' && peer && peer.id === other;
+    if (active) {
       if (!document.querySelector('#msgs [data-mid="' + m.id + '"]')) addMsg(m); // o servidor devolve a mensagem já com o ID real — sem duplicar mídia
-      if ($('cl') && !chatUsers.some((u) => u.id === other)) loadChatList();
-    } else {
-      if (m.to_id === me.id) { unread++; badges(); }
-      if (view === 'chats' && $('cl') && !chatUsers.some((u) => u.id === other)) loadChatList();
+      if (m.from_id !== me.id) await markChatRead(other); // conversa aberta: já foi lida
     }
+    if (view === 'chats' && $('cl')) loadChatList();
+    else if (+m.to_id === me.id) { unread++; badges(); }
   });
   sock.on('story_view', ({ story_id }) => {
     const g = G.find((x) => x.items.some((i) => i.id === story_id));
@@ -446,7 +501,7 @@ async function start() {
     }
   });
   sock.on('notif', () => { badges(); if (panel === 'notifs') loadNotifs(); });
-  badges();
+  badges(); refreshUnread();
   const h = location.hash;
   h.startsWith('#@') ? go('profile', h.slice(2)) : go('home');
 }
@@ -471,7 +526,7 @@ function markNav() {
   document.querySelectorAll('.nv').forEach((b) => b.classList.toggle('on', panel ? b.dataset.p === panel : b.dataset.v === view));
 }
 async function badges(local) {
-  const set = (id, n) => { const e = $(id); if (!e) return; e.textContent = n > 9 ? '9+' : n; e.classList.toggle('hide', !n); };
+  const set = (id, n) => { const e = $(id); if (!e) return; e.textContent = n > 8 ? '9+' : n; e.classList.toggle('hide', !n); };
   set('bd-m', unread); set('bd-p', unread);
   if (local) return;
   try { set('bd-n', (await api('/api/notifs/count')).n); } catch {}
@@ -479,7 +534,6 @@ async function badges(local) {
 
 function go(v, arg) {
   view = v; if (au) au.pause(); dmReset(); chatLoadId++; peer = null; if (v !== 'chats') pendingPeer = null;
-  if (v === 'chats') { unread = 0; badges(true); }
   closePanel(true); closeMore(true); closeM(true); closeS(true);
   const el = $('view'); el.className = ''; void el.offsetWidth; el.className = 'fx';
   $('pill').classList.toggle('hide', v === 'chats');
@@ -556,7 +610,7 @@ function renderNotifs(anim) {
       const storyPrev = n.media ? (n.ptype === 'video' ? `<video class="sp" src="${n.media}#t=0.1" muted preload="metadata"></video>` : `<img class="sp" src="${n.media}" alt="">`) : '';
       const bubble = n.type === 'story_reply' && n.text ? `<div class="sb"><div class="st">${esc(n.text)}</div></div>` : '';
       return `<div class="nt ${n.seen ? '' : 'new'}" style="--i:${i++};${anim ? 'animation:rise .4s var(--ease) both;animation-delay:' + Math.min(i, 12) * 40 + 'ms' : ''}" onclick="${click}">${av(n, 44)}
-        <div class="tx"><b>${esc(n.username)}</b>${vf(n.verified)} ${NT[n.type] || ''} <small>${rt(n.created)}</small>
+        <div class="tx"><b>${esc(n.username)}</b>${vf(n.verified,n.username)} ${NT[n.type] || ''} <small>${rt(n.created)}</small>
         ${bubble ? `<div class="sw">${storyPrev}${bubble}</div>` : ''}</div>${act}</div>`;
     }).join('');
   });
@@ -785,14 +839,14 @@ const tagsLine = (p) => (p.tags && p.tags.length ? `<p class="tg"><small>com</sm
 const cmts = (p, full) => {
   const list = full ? p.comments : p.comments.slice(-2);
   return (!full && p.ncomments > 2 ? `<span class="more" onclick="openPost(${p.id})">Ver todos os ${p.ncomments} comentários</span>` : '')
-    + list.map((c) => `<p data-cid="${c.id}"><b>${esc(c.username)}</b>${vf(c.verified)} <span class="ct">${linkify(esc(c.text))}</span>${c.edited_at ? ' <small class="ed" style="color:var(--mute)">editado</small>' : ''}
+    + list.map((c) => `<p data-cid="${c.id}"><b>${esc(c.username)}</b>${vf(c.verified,c.username)} <span class="ct">${linkify(esc(c.text))}</span>${c.edited_at ? ' <small class="ed" style="color:var(--mute)">editado</small>' : ''}
       ${c.user_id === me.id ? `<button class="gh" onclick="editComment(${p.id},${c.id},this)" style="font-size:.7rem;padding:.15rem .5rem;border-radius:6px;margin-left:.4rem">Editar</button><button class="gh" onclick="deleteComment(${p.id},${c.id})" style="font-size:.7rem;padding:.15rem .5rem;border-radius:6px;margin-left:.3rem">Excluir</button>` : ''}</p>`).join('');
 };
 function postCard(p, i = 0) {
   P[p.id] = p;
   return `<article class="post" id="p${p.id}" style="--i:${i}">
   <div class="ph"><a onclick="go('profile','${p.username}')">${av(p, 36)}</a>
-    <div class="who"><b onclick="go('profile','${p.username}')">${esc(p.username)}</b>${vf(p.verified)}<small> • ${rt(p.created)}</small>
+    <div class="who"><b onclick="go('profile','${p.username}')">${esc(p.username)}</b>${vf(p.verified,p.username)}<small> • ${rt(p.created)}</small>
     ${p.orig ? `<div class="ro">↻ republicado de @${esc(p.orig)}</div>` : ''}</div>
     <button class="mo" onclick="postMenu(${p.id})" aria-label="Mais">${I('dots', 22)}</button></div>
   <div class="pm" ondblclick="dbl(${p.id},this)">${media(p)}</div>
@@ -808,7 +862,7 @@ function postDetail(p) {
   P[p.id] = p;
   const fullscreenBtn = p.type === 'video' ? `<button class="ib" onclick="toggleFullscreenVideo()" aria-label="Tela cheia">${I('expand', 20)}</button>` : '';
   return `<div class="pdet"><div class="pdm">${media(p, true)}</div><div class="pdr">
-    <div class="pdh">${av(p, 34)}<b onclick="go('profile','${p.username}')">${esc(p.username)}${vf(p.verified)}</b>${fullscreenBtn}<button class="ib" onclick="postMenu(${p.id})" aria-label="Mais opções" style="margin-left:auto">${I('dots', 20)}</button><button class="ib" onclick="closeM()" aria-label="Fechar">${I('x', 20)}</button></div>
+    <div class="pdh">${av(p, 34)}<b onclick="go('profile','${p.username}')">${esc(p.username)}${vf(p.verified,p.username)}</b>${fullscreenBtn}<button class="ib" onclick="postMenu(${p.id})" aria-label="Mais opções" style="margin-left:auto">${I('dots', 20)}</button><button class="ib" onclick="closeM()" aria-label="Fechar">${I('x', 20)}</button></div>
     <div class="pdc">${p.caption ? `<p><b>${esc(p.username)}</b> ${linkify(esc(p.caption))}</p>` : ''}${tagsLine(p)}
     ${p.song_preview ? `<div class="song" style="margin:.4rem 0"><button onclick="playSongPost('${esc(p.song_preview)}',${p.id})" aria-label="Tocar prévia">▶</button><input type="range" min="0" max="${p.song_duration || 30}" value="0" style="width:110px;margin-left:.4rem"><small style="color:var(--mute)">Prévia da música</small></div>` : ''}
     <div data-cl="${p.id}" data-full="1">${cmts(p, true) || '<small>Sem comentários ainda.</small>'}</div></div>
@@ -921,11 +975,11 @@ function renderStories() {
   const el = $('sts'); if (!el) return;
   const own = G.some((g) => g.uid === me.id);
   el.innerHTML = `${own ? '' : `<button class="st" onclick="newPost('story')"><div class="ring seen">${av(me, 62)}</div><small>Seu story</small></button>`}
-    ${G.map((g, i) => `<button class="st" onclick="openStory(${i})"><div class="ring ${g.seen ? 'seen' : ''}">${av(g, 62)}${vf(g.verified)}</div><small>${g.uid === me.id ? 'Seu story' : esc(g.username)}</small></button>`).join('')}`;
+    ${G.map((g, i) => `<button class="st" onclick="openStory(${i})"><div class="ring ${g.seen ? 'seen' : ''}">${av(g, 62)}${vf(g.verified,g.username)}</div><small>${g.uid === me.id ? 'Seu story' : esc(g.username)}</small></button>`).join('')}`;
 }
 async function renderRight() {
   const rc = $('rc'); if (!rc) return;
-  rc.innerHTML = `<div class="acc">${av(me, 44)}<span><b onclick="go('profile',me.username)">${esc(me.username)}${vf(me.verified)}</b><small>${esc(me.name || '')}</small></span><button class="lnk" onclick="switchAccountUI()">Trocar</button></div>
+  rc.innerHTML = `<div class="acc">${av(me, 44)}<span><b onclick="go('profile',me.username)">${esc(me.username)}${vf(me.verified,me.username)}</b><small>${esc(me.name || '')}</small></span><button class="lnk" onclick="switchAccountUI()">Trocar</button></div>
     <div class="row" style="justify-content:space-between;margin-bottom:.5rem"><b style="color:var(--mute)">Sugestões para você</b><button class="lnk" style="color:var(--ink);font-size:.8rem" onclick="allSuggest()">Ver tudo</button></div>
     <div id="sgl"></div>
     <div class="foot">© 2026 Anarchy</div>`;
@@ -934,7 +988,7 @@ async function renderRight() {
     if ($('sgl')) $('sgl').innerHTML = us.map(sgRow).join('') || '<small>Sem sugestões por enquanto.</small>';
   } catch {}
 }
-const sgRow = (u, i = 0) => `<div class="sg" style="animation-delay:${i * 60}ms">${av(u, 44)}<span><b onclick="go('profile','${u.username}')">${esc(u.username)}${vf(u.verified)}</b><small>${u.via ? 'Seguido(a) por ' + esc(u.via) : 'Sugestões para você'}</small></span><button class="lnk" onclick="sfollow(${u.id},this)">Seguir</button></div>`;
+const sgRow = (u, i = 0) => `<div class="sg" style="animation-delay:${i * 60}ms">${av(u, 44)}<span><b onclick="go('profile','${u.username}')">${esc(u.username)}${vf(u.verified,u.username)}</b><small>${u.via ? 'Seguido(a) por ' + esc(u.via) : 'Sugestões para você'}</small></span><button class="lnk" onclick="sfollow(${u.id},this)">Seguir</button></div>`;
 async function sfollow(id, b) { const r = await api('/api/follow/' + id, { method: 'POST' }); b.textContent = RL[r.status]; b.classList.toggle('off', r.status !== 'none'); }
 async function allSuggest() {
   const us = await api('/api/suggestions?limit=30');
@@ -992,7 +1046,7 @@ function openStory(gi, si = 0) {
   stGi = gi;
   stSid = s.id;
   o.innerHTML = `<div class="sbox ${first ? 'first' : dir > 0 ? 'inR' : dir < 0 ? 'inL' : ''}"><div class="bars">${g.items.map((_, i) => `<i class="${i < si ? 'f' : ''}">${i === si ? '<b id="sb"></b>' : ''}</i>`).join('')}</div>
-    <div class="sh">${av(g, 32)}${vf(g.verified)}<b>${esc(g.username)}</b><small>${rt(s.created)}</small>
+    <div class="sh">${av(g, 32)}${vf(g.verified,g.username)}<b>${esc(g.username)}</b><small>${rt(s.created)}</small>
       ${s.mentions ? `<small style="color:#8fa0ff"> ${s.mentions.split(',').filter(Boolean).map((n) => `<a onclick="closeS();go('profile','${esc(n)}')" style="cursor:pointer">@${esc(n)}</a>`).join(' ')} </small>` : ''}
       <div class="hr">${volCtl('story')}<button id="spb" onclick="storyTogglePause()" aria-label="Pausar" style="color:#fff">${I('pause', 20)}</button>${own ? `<button onclick="storyMenu(${s.id})" aria-label="Mais opções" style="color:#fff">${I('dots', 20)}</button>` : ''}<button onclick="closeS()" aria-label="Fechar">${I('x', 22)}</button></div></div>
     ${vid ? `<video class="sm" src="${s.media}" autoplay playsinline></video>` : `<img class="sm" src="${s.media}" alt="">`}
@@ -1028,7 +1082,7 @@ function search(q) {
     const r = $('sres'); if (!r) return;
     if (!q.trim()) { r.innerHTML = '<p class="empty">Digite um nome ou @usuário.</p>'; return; }
     const us = await api('/api/search?q=' + encodeURIComponent(q.replace(/^@/, '')));
-    if ($('sres')) $('sres').innerHTML = us.map((u, i) => `<div class="rq" style="animation:rise .35s var(--ease) both;animation-delay:${i * 40}ms" onclick="go('profile','${u.username}')">${av(u, 44)}<span><b>${esc(u.username)}${vf(u.verified)}</b><small>${esc(u.name || '')}</small></span></div>`).join('') || '<p class="empty">Ninguém encontrado.</p>';
+    if ($('sres')) $('sres').innerHTML = us.map((u, i) => `<div class="rq" style="animation:rise .35s var(--ease) both;animation-delay:${i * 40}ms" onclick="go('profile','${u.username}')">${av(u, 44)}<span><b>${esc(u.username)}${vf(u.verified,u.username)}</b><small>${esc(u.name || '')}</small></span></div>`).join('') || '<p class="empty">Ninguém encontrado.</p>';
   }, 250);
 }
 
@@ -1041,7 +1095,7 @@ async function reels() {
     <div class="pp">${I('play', 34)}</div>
     <div class="rtop"><button class="mute rmore" onclick="postMenu(${p.id})" aria-label="Mais opções">${I('dots', 16)}</button>${volCtl('feed')}</div>
     <div class="ra" data-pa="${p.id}">${acts(p)}</div>
-    <div class="ri"><div class="row">${av(p, 34)}<b onclick="go('profile','${p.username}')">${esc(p.username)}</b>${vf(p.verified)}<small style="color:#ccc">• ${rt(p.created)}</small></div>${p.caption ? `<p>${linkify(esc(p.caption))}</p>` : ''}${tagsLine(p)}</div></section>`; }).join('')
+    <div class="ri"><div class="row">${av(p, 34)}<b onclick="go('profile','${p.username}')">${esc(p.username)}</b>${vf(p.verified,p.username)}<small style="color:#ccc">• ${rt(p.created)}</small></div>${p.caption ? `<p>${linkify(esc(p.caption))}</p>` : ''}${tagsLine(p)}</div></section>`; }).join('')
     || `<div class="eg" style="margin:auto">${I('reels', 48)}<h3>Nenhum reel ainda</h3><p class="empty">Os vídeos publicados aparecem aqui.</p></div>`;
   watch();
 }
@@ -1068,10 +1122,10 @@ async function profile(name) {
     ? `<button class="gh" onclick="editProfile()">Editar perfil</button><button class="gh" onclick="changeUsernameUI()">Trocar username</button><button class="gh" onclick="shareProfile('${u.username}')">Compartilhar perfil</button>`
     : `<button class="${d.rel === 'none' ? 'bl' : 'gh'}" onclick="follow(${u.id},'${u.username}')">${RL[d.rel]}</button><button class="gh" onclick="openChat(${u.id},'${u.username}')">Mensagem</button><button class="gh" onclick="blockUser(${u.id})">Bloquear @${esc(u.username)}</button>`;
   $('view').innerHTML = `<div class="prof"><div class="pt">${av(u, 150)}<div class="pi">
-      <div class="row"><h2>${esc(u.username)}${vf(u.verified)}</h2>${u.private ? `<small title="Conta privada">${I('lock', 16)}</small>` : ''}</div>
+      <div class="row"><h2>${esc(u.username)}${vf(u.verified,u.username)}</h2>${u.private ? `<small title="Conta privada">${I('lock', 16)}</small>` : ''}</div>
       <div class="cnt"><span><b>${d.count.posts}</b> posts</span><span><b>${d.count.followers}</b> seguidores</span><span><b>${d.count.following}</b> seguindo</span></div>
       <div class="bio"><b>${esc(u.name || '')}</b><p>${linkify(esc(u.bio || ''))}</p>
-      ${u.song_url ? `<div class="song"><button data-src="${esc(u.song_url)}" onclick="playSong(this)" aria-label="Tocar prévia">▶</button>${u.song_art ? `<img src="${esc(u.song_art)}" alt="">` : ''}<span><b>${esc(u.song_title)}</b><small>${esc(u.song_artist)}</small></span></div>` : ''}</div></div></div>
+      ${u.song_url ? `<div class="song"><button data-src="${esc(u.song_url)}" data-start="${u.song_start || 0}" data-dur="${u.song_dur || 0}" onclick="playSong(this)" aria-label="Tocar prévia">▶</button>${u.song_art ? `<img src="${esc(u.song_art)}" alt="">` : ''}<span><b>${esc(u.song_title)}</b><small>${esc(u.song_artist)}</small></span></div>` : ''}</div></div></div>
     <div class="pbt">${btns}</div>
     ${reqs.length ? `<div class="reqs"><b>Solicitações para seguir</b>${reqs.map((r) => `<div class="rq">${av(r, 36)}<span>@${esc(r.username)}</span><button class="bl" onclick="reqAct(${r.id},'accept')">Aceitar</button><button class="gh" onclick="reqAct(${r.id},'decline')">Recusar</button></div>`).join('')}</div>` : ''}
     ${self ? `<div class="hl"><button onclick="newPost('story')"><div class="nw">${I('plus', 34)}</div>Novo</button></div>` : '<div style="height:1.4rem"></div>'}
@@ -1105,19 +1159,27 @@ function shareProfile(n) {
   (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject()).then(() => toast('Link do perfil copiado'), () => prompt('Copie o link do perfil:', url));
 }
 function playSong(b) {
-  const s = b.dataset.src;
-  if (au && au.src === s && !au.paused) { au.pause(); b.textContent = '▶'; return; }
+  const s = b.dataset.src, start = Math.max(0, +b.dataset.start || 0), dur = Math.max(0, +b.dataset.dur || 0);
+  if (au && au._src === s && !au.paused) { au.pause(); b.textContent = '▶'; return; }
   if (au) au.pause();
   dmStopAll();
   document.querySelectorAll('.song button').forEach((x) => { x.textContent = '▶'; });
-  au = new Audio(s); au.play(); b.textContent = '❚❚'; au.onended = () => { b.textContent = '▶'; };
+  au = new Audio(s); au._src = s;
+  const end = dur > 0 ? start + dur : 0;
+  au.addEventListener('loadedmetadata', () => {
+    if (start && au.duration) au.currentTime = Math.min(start, Math.max(0, au.duration - 0.5));
+  });
+  au.ontimeupdate = () => { if (end && au.currentTime >= end) { au.pause(); b.textContent = '▶'; } };
+  au.onended = () => { b.textContent = '▶'; };
+  au.play().catch(() => toast('Não foi possível tocar a prévia.'));
+  b.textContent = '❚❚';
 }
 function playSongPost(src, pid) {
-  if (au && au.src === src && !au.paused) { au.pause(); return; }
+  if (au && au._src === src && !au.paused) { au.pause(); return; }
   if (au) au.pause();
   dmStopAll();
   document.querySelectorAll('.song button').forEach((x) => { x.textContent = '▶'; });
-  au = new Audio(src);
+  au = new Audio(src); au._src = src;
   au.play();
   const btn = document.querySelector(`[data-pa="${pid}"] button`);
   if (btn) btn.textContent = '❚❚';
@@ -1137,7 +1199,7 @@ function playSongPost(src, pid) {
 }
 async function follow(id, name) { await api('/api/follow/' + id, { method: 'POST' }); profile(name); }
 async function reqAct(id, a) { await api(`/api/requests/${id}/${a}`, { method: 'POST' }); profile(me.username); }
-async function verify() { me = await api('/api/verify', { method: 'POST' }); toast(me.verified ? 'Selo Verificado ativado' : 'Selo removido'); if (view === 'profile') profile(me.username); }
+async function verify() { me = await api('/api/verify', { method: 'POST' }); await loadBadgeColors(); toast(me.verified ? 'Selo Verificado ativado' : 'Selo removido'); if (view === 'profile') profile(me.username); }
 async function deactivateAccount() {
   const senha = prompt('Digite sua senha para confirmar a desativação da conta:');
   if (!senha) return;
@@ -1150,15 +1212,19 @@ async function deleteAccount() {
 }
 
 function editProfile() {
-  song = { song_title: me.song_title, song_artist: me.song_artist, song_url: me.song_url, song_art: me.song_art };
+  song = { song_title: me.song_title, song_artist: me.song_artist, song_url: me.song_url, song_art: me.song_art, song_start: me.song_start || 0, song_dur: me.song_dur || 0 };
+  const vc = /^#[0-9a-f]{6}$/i.test(me.verified_color || '') ? me.verified_color : '#ff2d2d';
   modal(`<h3>Editar perfil</h3><label>Foto de perfil</label><input type="file" id="ea" accept="image/*" onchange="openAvatarCropper(this)">
   <div id="eaPreview" style="margin:.5rem 0"></div>
   <label>Nome</label><input id="en" maxlength="40" value="${esc(me.name)}"><label>Biografia</label><textarea id="eb" maxlength="150">${esc(me.bio)}</textarea>
   <label>Música da bio (prévia de 30s)</label><div class="row"><input id="eq" placeholder="Buscar música ou artista"><button class="gh" onclick="findSong()">Buscar</button></div>
   <div id="er"></div><div class="row"><small id="es">${song.song_title ? '🎵 ' + esc(song.song_title) + ' — ' + esc(song.song_artist) : 'Nenhuma música escolhida'}</small>
-  <button class="gh" onclick="song={};$('es').textContent='Nenhuma música escolhida'">Remover</button></div>
+  <button class="gh" onclick="removeSong()">Remover</button></div>
+  <div id="sgw"></div>
+  <label>Cor do selo verificado</label><div class="row"><input type="color" id="evc" value="${vc}" aria-label="Cor do selo verificado"><button class="gh" onclick="$('evc').value='#ff2d2d'">Padrão</button><small>Só aparece para quem tem o selo.</small></div>
   <label class="chk"><input type="checkbox" id="ep" ${me.private ? 'checked' : ''}> Conta privada</label>
-  <div class="row" style="margin-top:.8rem"><button class="bl" onclick="saveProfile()">Salvar</button><button class="gh" onclick="verify()">${me.verified ? 'Cancelar Verificado' : 'Obter Verificado grátis'}</button><button class="gh" onclick="deactivateAccount()" style="color:#ff4d4d">Desativar Conta</button><button class="gh rd" onclick="deleteAccount()" style="color:#ff2d2d">Excluir Conta</button><button class="gh" style="margin-left:auto" onclick="logout()">Sair</button></div><p class="err" id="ee"></p>`);
+  <div class="row" style="margin-top:.8rem;flex-wrap:wrap"><button class="bl" onclick="saveProfile()">Salvar</button><button class="gh" onclick="verify()">${me.verified ? 'Cancelar Verificado' : 'Obter Verificado grátis'}</button><button class="gh" onclick="deactivateAccount()" style="color:#ff4d4d">Desativar Conta</button><button class="gh rd" onclick="deleteAccount()" style="color:#ff2d2d">Excluir Conta</button><button class="gh" style="margin-left:auto" onclick="logout()">Sair</button></div><p class="err" id="ee"></p>`);
+  initSegEditor();
 }
 async function findSong() {
   const q = $('eq').value.trim(); if (!q) return;
@@ -1170,15 +1236,82 @@ async function findSong() {
   } catch { $('er').textContent = 'Não foi possível buscar agora. Verifique sua internet.'; }
 }
 function pickSong(i) {
-  const x = SR[i]; song = { song_title: x.trackName, song_artist: x.artistName, song_url: x.previewUrl, song_art: x.artworkUrl100 };
+  const x = SR[i]; song = { song_title: x.trackName, song_artist: x.artistName, song_url: x.previewUrl, song_art: x.artworkUrl100, song_start: 0, song_dur: 0 };
   $('es').textContent = '🎵 ' + x.trackName + ' — ' + x.artistName; $('er').innerHTML = '';
+  initSegEditor();
+}
+const fmtSeg = (s) => { s = Math.max(0, Math.round(s || 0)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+function updateSeg() {
+  const a = $('sgA'), b = $('sgB'), fill = $('sgfill'), lbl = $('sglbl');
+  if (!a || !b || !fill || !lbl) return;
+  const max = +a.max || 30;
+  let x = +a.value, y = +b.value;
+  if (y < x + 3) { if (document.activeElement === a) y = Math.min(max, x + 3); else x = Math.max(0, y - 3); a.value = x; b.value = y; }
+  fill.style.left = (x / max * 100) + '%'; fill.style.width = ((y - x) / max * 100) + '%';
+  lbl.textContent = fmtSeg(x) + ' – ' + fmtSeg(y) + ' (' + Math.round(y - x) + 's)';
+}
+function initSegEditor() {
+  const w = $('sgw'); if (!w) return;
+  if (!song.song_url) { w.innerHTML = ''; return; }
+  w.innerHTML = `<div class="seg">
+    <div class="row" style="justify-content:space-between"><b style="font-size:.8rem">Trecho que toca no perfil</b><small id="sglbl">0:00 – 0:30</small></div>
+    <div class="segtrack"><i id="sgfill"></i></div>
+    <input type="range" id="sgA" min="0" max="30" step="1" value="0" aria-label="Início do trecho">
+    <input type="range" id="sgB" min="0" max="30" step="1" value="30" aria-label="Fim do trecho">
+    <div class="row" style="margin-top:.4rem"><button type="button" class="gh" onclick="previewSeg()">▶ Ouvir trecho</button><small>Deslize para escolher início e fim.</small></div>
+  </div>`;
+  const a = $('sgA'), b = $('sgB');
+  a.oninput = updateSeg; b.oninput = updateSeg;
+  const probe = new Audio(song.song_url);
+  let done = false;
+  const ready = () => {
+    if (done) return;
+    done = true;
+    const full = Math.max(5, Math.min(600, Math.floor(probe.duration || 30)));
+    a.max = full; b.max = full;
+    const st = Math.min(Math.max(0, +song.song_start || 0), Math.max(0, full - 3));
+    const du = Math.max(3, Math.min(full - st, +song.song_dur || Math.min(30, full)));
+    a.value = st; b.value = Math.min(full, st + du);
+    updateSeg();
+  };
+  probe.addEventListener('loadedmetadata', ready);
+  probe.addEventListener('error', ready);
+  setTimeout(() => { if (!probe.duration) ready(); }, 1500);
+}
+function previewSeg() {
+  const a = $('sgA'), b = $('sgB');
+  if (!a || !b || !song.song_url) return;
+  const x = +a.value, y = +b.value;
+  if (au) au.pause();
+  if (segAu) segAu.pause();
+  segAu = new Audio(song.song_url);
+  segAu.addEventListener('loadedmetadata', () => { try { segAu.currentTime = x; } catch {} });
+  segAu.ontimeupdate = () => { if (segAu.currentTime >= y) segAu.pause(); };
+  segAu.play().catch(() => toast('Não foi possível tocar a prévia.'));
+}
+function removeSong() {
+  song = {};
+  if ($('sgw')) $('sgw').innerHTML = '';
+  if ($('es')) $('es').textContent = 'Nenhuma música escolhida';
+  if (segAu) { segAu.pause(); segAu = null; }
 }
 async function saveProfile() {
   const fd = new FormData();
   fd.append('name', $('en').value); fd.append('bio', $('eb').value); fd.append('private', $('ep').checked ? '1' : '0');
   for (const k of ['song_title', 'song_artist', 'song_url', 'song_art']) fd.append(k, song[k] || '');
+  if ($('evc')) fd.append('verified_color', $('evc').value);
+  if (song.song_url) {
+    const a = $('sgA'), b = $('sgB');
+    fd.append('song_start', a ? a.value : (song.song_start || 0));
+    fd.append('song_dur', a && b ? Math.max(0, +b.value - +a.value) : (song.song_dur || 0));
+  } else { fd.append('song_start', '0'); fd.append('song_dur', '0'); }
   if ($('ea').files[0]) fd.append('avatar', $('ea').files[0]);
-  try { me = await api('/api/me', { method: 'PUT', body: fd }); renderSide(); go('profile', me.username); } catch (e) { $('ee').textContent = e.message; }
+  if (segAu) { segAu.pause(); segAu = null; }
+  try {
+    me = await api('/api/me', { method: 'PUT', body: fd });
+    await loadBadgeColors();
+    renderSide(); go('profile', me.username);
+  } catch (e) { $('ee').textContent = e.message; }
 }
 
 /* ---------- Mensagens ---------- */
@@ -1188,16 +1321,36 @@ async function chats() {
   if (view !== 'chats') return;
   if (pendingPeer) { const p = pendingPeer; pendingPeer = null; openChat(p.id, p.name); }
 }
+function chatPreview(u) {
+  if (!u.last) return 'Toque para conversar';
+  const who = u.last_from === me.id ? 'Você: ' : '';
+  const t = u.last_type === 'video' ? '🎬 Vídeo'
+    : u.last_type === 'audio' ? '🎵 Áudio'
+      : u.last_type === 'song' ? '🎵 Música'
+        : u.last_type === 'story_reply' ? '📷 Respondeu ao story'
+          : u.last_type === 'image' ? '📷 Foto'
+            : u.last_text ? esc(String(u.last_text).slice(0, 60)) : '📷 Mídia';
+  return who + t;
+}
 async function loadChatList() {
   if (!$('cl')) return;
   try {
     chatUsers = await api('/api/chats');
     if (!$('cl')) return;
-    $('cl').innerHTML = '<h3>Mensagens</h3>' + (chatUsers.map((u) => `<button class="rq" data-id="${u.id}" onclick="openChat(${u.id},'${u.username}')">${av(u, 48)}<span><b>${esc(u.username)}${vf(u.verified)}</b></span></button>`).join('') || '<p class="empty">Siga alguém para começar uma conversa.</p>');
+    unread = chatUsers.reduce((a, u) => a + (u.unread || 0), 0); badges(true);
+    $('cl').innerHTML = '<h3>Mensagens</h3>' + (chatUsers.map((u) => {
+      const n = u.unread || 0;
+      return `<button class="rq${n ? ' unread' : ''}" data-id="${u.id}" onclick="openChat(${u.id},'${esc(u.username)}')">${av(u, 48)}<span><b>${esc(u.username)}${vf(u.verified, u.username)}</b><small class="pv">${chatPreview(u)}</small></span>${n ? `<em class="cbd" title="${n} mensagens novas">${n > 8 ? '9+' : n}</em>` : ''}</button>`;
+    }).join('') || '<p class="empty">Siga alguém para começar uma conversa.</p>');
     if (peer) document.querySelectorAll('#cl .rq').forEach((b) => b.classList.toggle('on', +b.dataset.id === peer.id));
   } catch {
     if ($('cl')) $('cl').innerHTML = '<h3>Mensagens</h3><p class="empty">Não foi possível carregar as conversas.</p>';
   }
+}
+async function markChatRead(id) {
+  try { await api('/api/chat/read/' + id, { method: 'POST' }); } catch {}
+  const u = chatUsers.find((x) => x.id === id); if (u) u.unread = 0;
+  unread = chatUsers.reduce((a, x) => a + (x.unread || 0), 0); badges(true);
 }
 async function openChat(id, name) {
   if (view !== 'chats') { pendingPeer = { id, name }; return go('chats'); }
@@ -1211,7 +1364,6 @@ async function openChat(id, name) {
   if (!name) name = 'Conversa';
   dmReset();
   peer = { id, name };
-  unread = 0; badges(true);
   document.querySelectorAll('#cl .rq').forEach((b) => b.classList.toggle('on', +b.dataset.id === id));
   $('room').innerHTML = `<div class="rh"><span class="rhname" title="${esc(name)}">${esc(name)}</span><span class="rhactions"><button class="ib" onclick="togglePinChat(${id})" title="Fixar/desafixar conversa" aria-label="Fixar conversa">${I('shield', 16)}</button><button class="ib" onclick="deleteChat(${id})" title="Excluir conversa" aria-label="Excluir conversa">${I('x', 16)}</button></span></div><div id="msgs"></div><form id="send" onsubmit="sendMsg(event)"><input id="mt" placeholder="Mensagem..." autocomplete="off"><button type="button" class="ib" onclick="pickDMFile()" title="Anexar foto ou vídeo" aria-label="Anexar mídia">${I('camera', 18)}</button><button type="button" class="ib" onclick="pickDMAudio()" title="Enviar áudio do dispositivo" aria-label="Enviar áudio">${I('music', 18)}</button><button type="button" class="ib" onclick="openEmojiPicker('mt')" title="Emoji" aria-label="Emoji">${I('smile', 18)}</button><button class="bl">Enviar</button></form>`;
   try {
@@ -1220,6 +1372,7 @@ async function openChat(id, name) {
     if (!msgs.length) $('msgs').innerHTML = '<p class="empty">Nenhuma mensagem ainda. Diga oi 👋</p>';
     else msgs.forEach(addMsg);
   } catch (e) { if (peer && peer.id === id) toast(e.message); }
+  if (view === 'chats' && peer && peer.id === id) { await markChatRead(id); loadChatList(); }
   $('mt') && window.matchMedia('(hover:hover)').matches && $('mt').focus();
 }
 const miniPost = (p) => { P[p.id] = p; return `<div class="mp" onclick="openPost(${p.id})">${p.type === 'video' ? `<video src="${p.media}#t=0.1" muted preload="metadata"></video>` : `<img src="${p.media}" alt="">`}<small><b>@${esc(p.username)}</b> ${esc((p.caption || '').slice(0, 60))}</small></div>`; };
@@ -1420,7 +1573,7 @@ async function commentStory(storyId, inp) {
 }
 async function loadStoryReactions(storyId) {
   storyPause();
-  try { const r = await api(`/api/stories/${storyId}/reactions`); modal(`<h3>Reações</h3>${r.map((x) => `<div class="rq">${av(x, 40)}<span><b>${esc(x.username)}${vf(x.verified)}</b><small>${x.type === 'like' ? '❤️ curtiu' : '💬 ' + esc(x.text)}</small></span></div>`).join('') || '<p class="empty">Sem reações.</p>'}`); } catch (e) { toast(e.message); }
+  try { const r = await api(`/api/stories/${storyId}/reactions`); modal(`<h3>Reações</h3>${r.map((x) => `<div class="rq">${av(x, 40)}<span><b>${esc(x.username)}${vf(x.verified,x.username)}</b><small>${x.type === 'like' ? '❤️ curtiu' : '💬 ' + esc(x.text)}</small></span></div>`).join('') || '<p class="empty">Sem reações.</p>'}`); } catch (e) { toast(e.message); }
 }
 
 // ---- Visualizacoes de Story ----
@@ -1429,16 +1582,19 @@ async function viewStory(storyId) {
 }
 async function getStoryViews(storyId) {
   storyPause();
-  try { const r = await api(`/api/stories/${storyId}/views`); modal(`<h3>Visualizações</h3><p><b>${r.count}</b> ${r.count === 1 ? 'perfil viu' : 'perfis viram'} esta story.</p>${r.viewers.map((v) => `<div class="rq">${av(v, 40)}<span><b>${esc(v.username)}${vf(v.verified)}</b><small>${rt(v.viewed_at)}</small></span></div>`).join('')}`); } catch (e) { toast(e.message); }
+  try { const r = await api(`/api/stories/${storyId}/views`); modal(`<h3>Visualizações</h3><p><b>${r.count}</b> ${r.count === 1 ? 'perfil viu' : 'perfis viram'} esta story.</p>${r.viewers.map((v) => `<div class="rq">${av(v, 40)}<span><b>${esc(v.username)}${vf(v.verified,v.username)}</b><small>${rt(v.viewed_at)}</small></span></div>`).join('')}`); } catch (e) { toast(e.message); }
 }
 
 // ---- Trocar Username ----
 async function changeUsernameUI() {
-  const nu = prompt('Novo nome de usuário (3 a 20 caracteres, letras, números e _):');
-  if (!nu) return;
+  const nu = await promptBox('(DIGITE SEU USUÁRIO)', '3 a 20 caracteres, letras, números e _', '');
+  if (nu === null) return;
+  const val = nu.trim();
+  if (!val) return;
   try {
-    const r = await api('/api/username/change', { method: 'POST', json: { new_username: nu } });
+    const r = await api('/api/username/change', { method: 'POST', json: { new_username: val } });
     token = localStorage.token = r.token;
+    await loadBadgeColors();
     toast('Username alterado para @' + r.username);
     go('profile', r.username);
   } catch (e) { toast(e.message); }
@@ -1474,6 +1630,7 @@ async function pickDMFile() {
   document.body.appendChild(input);
   input.onchange = async (e) => {
     const f = e.target.files[0]; if (!f) return;
+    if (!(await ask(`Enviar "${f.name}" para @${chat.name}?`, 'Enviar', 'Cancelar'))) { input.remove(); return; }
     const fd = new FormData(); fd.append('media', f);
     try {
       const r = await fetch('/api/dm/media', { method: 'POST', headers: { Authorization: 'Bearer ' + token }, body: fd });
@@ -1500,6 +1657,7 @@ async function pickDMAudio() {
   document.body.appendChild(input);
   input.onchange = async (e) => {
     const f = e.target.files[0]; if (!f) return;
+    if (!(await ask(`Enviar "${f.name}" para @${chat.name}?`, 'Enviar', 'Cancelar'))) { input.remove(); return; }
     const fd = new FormData(); fd.append('media', f);
     try {
       const r = await fetch('/api/dm/media', { method: 'POST', headers: { Authorization: 'Bearer ' + token }, body: fd });
@@ -1674,7 +1832,7 @@ window.addEventListener('scroll', () => {
   }
 });
 
-if (token) start();
+if (token) start(); else showAuth();
 </script>
 </body>
 </html>
