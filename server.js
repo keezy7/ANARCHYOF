@@ -23,7 +23,8 @@ const all = async (text, params = []) => {
   return r.rows;
 };
 const num = async (s, ...a) => {
-  const r = await pool.query(s, a);
+  const params = a.length === 1 && Array.isArray(a[0]) ? a[0] : a;
+  const r = await pool.query(s, params);
   return Number(r.rows[0]?.n || 0);
 };
 
@@ -503,10 +504,10 @@ app.get('/api/u/:name', auth, async (req, res) => {
     items = await fin(rows1, me);
 
     const rows2 = await all(
-      POST + ` AND p.id IN (SELECT post_id FROM tags WHERE user_id=$1)
-        AND (u.private=0 OR p.user_id=$2 OR p.user_id IN (SELECT followee FROM follows WHERE follower=$3 AND status='ok'))
+      POST + ` AND p.id IN (SELECT post_id FROM tags WHERE user_id=$2)
+        AND (u.private=0 OR p.user_id=$3 OR p.user_id IN (SELECT followee FROM follows WHERE follower=$4 AND status='ok'))
         ORDER BY p.created DESC`,
-      [me, u.id, me]
+      [me, u.id, u.id, me]
     );
     tagged = await fin(rows2, me);
   }
@@ -556,7 +557,7 @@ app.post('/api/requests/:id/:act', auth, async (req, res) => {
 app.get('/api/feed', auth, async (req, res) => {
   const me = req.user.id;
   const rows = await all(
-    POST + ` AND (p.user_id=$1 OR p.user_id IN (SELECT followee FROM follows WHERE follower=$2 AND status='ok'))
+    POST + ` AND (p.user_id=$2 OR p.user_id IN (SELECT followee FROM follows WHERE follower=$3 AND status='ok'))
       ORDER BY p.pinned DESC, p.created DESC LIMIT 50`,
     [me, me, me]
   );
@@ -565,7 +566,7 @@ app.get('/api/feed', auth, async (req, res) => {
 
 app.get('/api/explore', auth, async (req, res) => {
   const rows = await all(
-    POST + ' AND u.private=0 AND p.user_id<>$1 ORDER BY p.created DESC LIMIT 60',
+    POST + ' AND u.private=0 AND p.user_id<>$2 ORDER BY p.created DESC LIMIT 60',
     [req.user.id, req.user.id]
   );
   res.json(await fin(rows, req.user.id));
@@ -662,7 +663,7 @@ app.get('/api/reels', auth, async (req, res) => {
   const me = req.user.id;
   const rows = await all(
     `${POST} AND p.type='video' AND p.repost_of IS NULL
-      AND (u.private=0 OR p.user_id=$1 OR p.user_id IN (SELECT followee FROM follows WHERE follower=$2 AND status='ok'))
+      AND (u.private=0 OR p.user_id=$2 OR p.user_id IN (SELECT followee FROM follows WHERE follower=$3 AND status='ok'))
       ORDER BY p.created DESC LIMIT 40`,
     [me, me, me]
   );
@@ -776,7 +777,7 @@ app.get('/api/messages/:id', auth, async (req, res) => {
   const rows = await all(`
     SELECT * FROM messages WHERE ((from_id=$1 AND to_id=$2) OR (from_id=$2 AND to_id=$1)) AND deleted=0
     ORDER BY id DESC LIMIT 100
-  `, [me, o, o, me]);
+  `, [me, o]);
   const mapped = [];
   for (const m of rows.reverse()) {
     let post = null;
@@ -883,7 +884,7 @@ app.post('/api/stories/:id/comment', auth, async (req, res) => {
   if (s && s.user_id !== me) {
     const created = Date.now();
     const r = await run(
-      'INSERT INTO messages(from_id,to_id,text,media,type,created) VALUES($1,$2,$3,$4,$5,$6)',
+      'INSERT INTO messages(from_id,to_id,text,media,type,created) VALUES($1,$2,$3,$4,$5,$6) RETURNING id',
       [me, s.user_id, text.trim(), s.media, 'story_reply', created]
     );
     io.to('u' + s.user_id).emit('msg', {
@@ -993,19 +994,19 @@ app.delete('/api/account/delete', auth, async (req, res) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    await client.query('DELETE FROM comments WHERE user_id=$1 OR post_id IN (SELECT id FROM posts WHERE user_id=$1)', [me, me]);
-    await client.query('DELETE FROM likes WHERE user_id=$1 OR post_id IN (SELECT id FROM posts WHERE user_id=$1)', [me, me]);
-    await client.query('DELETE FROM tags WHERE user_id=$1 OR post_id IN (SELECT id FROM posts WHERE user_id=$1)', [me, me]);
+    await client.query('DELETE FROM comments WHERE user_id=$1 OR post_id IN (SELECT id FROM posts WHERE user_id=$1)', [me]);
+    await client.query('DELETE FROM likes WHERE user_id=$1 OR post_id IN (SELECT id FROM posts WHERE user_id=$1)', [me]);
+    await client.query('DELETE FROM tags WHERE user_id=$1 OR post_id IN (SELECT id FROM posts WHERE user_id=$1)', [me]);
     await client.query('DELETE FROM notifs WHERE user_id=$1 OR actor_id=$1', [me]);
-    await client.query('DELETE FROM story_views WHERE viewer_id=$1 OR story_id IN (SELECT id FROM stories WHERE user_id=$1)', [me, me]);
-    await client.query('DELETE FROM story_reactions WHERE user_id=$1 OR story_id IN (SELECT id FROM stories WHERE user_id=$1)', [me, me]);
+    await client.query('DELETE FROM story_views WHERE viewer_id=$1 OR story_id IN (SELECT id FROM stories WHERE user_id=$1)', [me]);
+    await client.query('DELETE FROM story_reactions WHERE user_id=$1 OR story_id IN (SELECT id FROM stories WHERE user_id=$1)', [me]);
     await client.query('DELETE FROM stories WHERE user_id=$1', [me]);
     await client.query('DELETE FROM posts WHERE user_id=$1', [me]);
-    await client.query('DELETE FROM messages WHERE from_id=$1 OR to_id=$1', [me, me]);
-    await client.query('DELETE FROM follows WHERE follower=$1 OR followee=$1', [me, me]);
-    await client.query('DELETE FROM blocked_users WHERE blocker=$1 OR blocked=$1', [me, me]);
-    await client.query('DELETE FROM pinned_chats WHERE user_id=$1 OR peer_id=$1', [me, me]);
-    await client.query('DELETE FROM chat_reads WHERE user_id=$1 OR peer_id=$1', [me, me]);
+    await client.query('DELETE FROM messages WHERE from_id=$1 OR to_id=$1', [me]);
+    await client.query('DELETE FROM follows WHERE follower=$1 OR followee=$1', [me]);
+    await client.query('DELETE FROM blocked_users WHERE blocker=$1 OR blocked=$1', [me]);
+    await client.query('DELETE FROM pinned_chats WHERE user_id=$1 OR peer_id=$1', [me]);
+    await client.query('DELETE FROM chat_reads WHERE user_id=$1 OR peer_id=$1', [me]);
     await client.query('DELETE FROM users WHERE id=$1', [me]);
     await client.query('COMMIT');
   } catch (e) {
@@ -1081,7 +1082,7 @@ app.post('/api/chat/pin/:id', auth, async (req, res) => {
 app.delete('/api/chat/:id', auth, async (req, res) => {
   const peerId = +req.params.id;
   const me = req.user.id;
-  await run('DELETE FROM messages WHERE (from_id=$1 AND to_id=$2) OR (from_id=$2 AND to_id=$1)', [me, peerId, peerId, me]);
+  await run('DELETE FROM messages WHERE (from_id=$1 AND to_id=$2) OR (from_id=$2 AND to_id=$1)', [me, peerId]);
   await run('DELETE FROM pinned_chats WHERE user_id=$1 AND peer_id=$2', [me, peerId]);
   await run('DELETE FROM chat_reads WHERE user_id=$1 AND peer_id=$2', [me, peerId]);
   res.json({ ok: true });
