@@ -2,7 +2,14 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="color-scheme" content="dark">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Anarchy">
+<meta name="format-detection" content="telephone=no">
 <title>Anarchy</title>
 <link rel="icon" href="/logo_anarchy.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap">
@@ -302,6 +309,132 @@ main{margin-left:72px}
 #pill:hover{background:var(--soft2);transform:translateY(-2px)}
 @media(max-width:760px){#pill{display:none}}
 .toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--soft2);color:#fff;padding:.65rem 1.1rem;border-radius:10px;z-index:99;animation:slideUp .3s var(--ease);box-shadow:0 6px 24px rgba(0,0,0,.5)}
+
+/* ================= layout de app (Android / iOS) ================= */
+#mhead{display:none}
+.backbtn{display:none}
+@media(max-width:760px){
+  :root{--apphead:calc(48px + env(safe-area-inset-top,0px));--apptab:calc(56px + env(safe-area-inset-bottom,0px))}
+  html{-webkit-text-size-adjust:100%;height:100%}
+  body{min-height:100dvh;overscroll-behavior-y:none;-webkit-tap-highlight-color:transparent}
+  button,a{touch-action:manipulation}
+  input,textarea,select{font-size:16px}
+  .ib{width:40px;height:40px}
+
+  /* cabeçalho fixo */
+  #mhead{display:flex;align-items:center;justify-content:space-between;gap:.5rem;position:fixed;top:0;left:0;right:0;height:var(--apphead);padding:env(safe-area-inset-top,0px) .55rem 0 .8rem;background:rgba(10,10,10,.94);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid var(--line);z-index:35}
+  .mh-logo{display:flex;align-items:center;gap:.45rem;font-weight:800;font-size:1.2rem;letter-spacing:-.03em}
+  .mh-logo img{width:28px;height:28px;border-radius:0}
+  .mh-actions{display:flex;align-items:center;gap:.05rem}
+  .mh-actions .ii{position:relative;display:grid}
+
+  /* barra inferior */
+  #side,#side:hover{top:auto;bottom:0;left:0;right:0;width:100%;height:var(--apptab);flex-direction:row;align-items:stretch;justify-content:space-around;gap:0;border:0;border-top:1px solid var(--line);border-radius:0;padding:0 0 env(safe-area-inset-bottom,0px);background:rgba(10,10,10,.96);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:none;overflow:visible;z-index:36}
+  #side .lw,#side .sp,#side .nv[data-p]{display:none!important}
+  #side .nv,#side:hover .nv{flex:1;width:auto;height:56px;padding:0;gap:0;border-radius:0;justify-content:center;align-items:center}
+  #side .nv>span{display:none}
+  #side .nv .ic{width:25px;height:25px}
+  #side .nv.on .ii:after{content:"";position:absolute;left:50%;bottom:-7px;width:5px;height:5px;margin-left:-2.5px;border-radius:50%;background:var(--ink)}
+  #side .nv[data-act="create"] .ii{width:40px;height:40px;border-radius:13px;background:var(--soft2);place-items:center}
+  #side .nv[data-act="create"] .ii:after{display:none}
+  #side .nv .bd{top:-4px;right:-8px;border-color:var(--bg)}
+
+  /* conteúdo */
+  main{margin-left:0;padding-top:var(--apphead);padding-bottom:var(--apptab)}
+  #view{min-height:calc(100dvh - var(--apphead) - var(--apptab))}
+  #pill{display:none}
+
+  /* painéis viram tela cheia */
+  #panel{left:0;right:0;top:var(--apphead);bottom:var(--apptab);width:100%;max-width:100%;border-radius:0;box-shadow:none;padding-top:.7rem;animation-name:slideUp}
+  #panel h2{margin:0 1rem .8rem}
+  #more{left:auto;right:10px;top:calc(var(--apphead) + 6px);bottom:auto;transform-origin:top right}
+
+  /* feed */
+  .home{display:block;padding:0 0 .4rem}
+  .hc{width:100%}
+  .rc{display:none}
+  .stories{max-width:none;margin:0;padding:.55rem .75rem .85rem;gap:.7rem}
+  .st{width:70px}
+  .post{width:100%;margin:0;padding-bottom:.55rem;border-bottom:1px solid var(--line)}
+  .ph{padding:.55rem .75rem}
+  .pm{border-radius:0}
+  .pm img,.pm video{max-height:none}
+  .pa{padding:.5rem .75rem .1rem;gap:1.15rem}
+  .pb{padding:0 .75rem}
+  .foot{padding:0 .75rem}
+
+  /* perfil */
+  .prof{max-width:none;margin:0;padding:.7rem .75rem 1.4rem}
+  .pt{gap:1rem;padding:0;align-items:center}
+  .pt .pav .av{width:84px!important;height:84px!important;font-size:32px!important}
+  .pt h2{font-size:1.1rem}
+  .cnt{gap:.85rem;font-size:.88rem;flex-wrap:wrap}
+  .pbt{flex-wrap:wrap;gap:.4rem;margin-top:.9rem}
+  .pbt button{flex:1 1 45%;padding:.62rem}
+  .hl{padding:1rem 0;gap:1rem}
+  .tabs{margin-top:.2rem}
+  .tab{padding:.85rem .9rem}
+  .grid{gap:3px}
+  .gi .ov2{display:none}
+
+  /* reels */
+  .reels,.reel{height:calc(100dvh - var(--apphead) - var(--apptab))}
+  .reel{width:100%;padding:0}
+  .reel video{border-radius:0}
+  .ra{right:8px;bottom:74px}
+  .ri{border-radius:0}
+
+  /* mensagens: lista OU conversa */
+  #chat{display:block;width:100%;max-width:none;height:calc(100dvh - var(--apphead) - var(--apptab));min-height:0;margin:0;border:0;border-radius:0;overflow:hidden}
+  #cl{display:block;height:100%;overflow-y:auto;border:0;padding:.3rem .5rem .6rem;background:var(--bg)}
+  #cl h3{position:sticky;top:0;margin:0 0 .2rem;padding:.7rem .4rem .5rem;background:var(--bg);font-size:1.35rem}
+  #cl .rq{width:100%;margin:0 0 .15rem;padding:.6rem .5rem;gap:.7rem;background:transparent}
+  #cl .rq:hover,#cl .rq.on{background:var(--soft)}
+  #cl .rq .pv{display:block;font-size:.8rem}
+  #cl .rq .av{width:48px!important;height:48px!important;font-size:20px!important}
+  #cl .rq .cbd{position:static;margin-left:.25rem;min-width:20px;height:20px;font-size:11px;box-shadow:none}
+  #room{display:none;height:100%}
+  #chat.room-open #cl{display:none}
+  #chat.room-open #room{display:flex}
+  .backbtn{display:grid;margin-left:-.35rem}
+  .rh{padding:.5rem .55rem;gap:.35rem}
+  .rh .rhactions .ib{width:38px;height:38px}
+  #msgs{padding:.8rem .7rem;gap:.3rem}
+  .m{max-width:82%}
+  #send{padding:.5rem .5rem calc(.5rem + env(safe-area-inset-bottom,0px));gap:.3rem}
+  #send input{padding:.6rem .8rem}
+  #send .ib{width:38px;height:38px}
+  #send .bl{padding:.55rem .8rem;font-size:.85rem}
+
+  /* conversa aberta usa a tela toda */
+  body.chatopen #mhead,body.chatopen #side{display:none}
+  body.chatopen main{padding-top:0;padding-bottom:0}
+  body.chatopen #view{min-height:100dvh}
+  body.chatopen #chat{height:100dvh}
+  body.chatopen .rh{padding-top:calc(.5rem + env(safe-area-inset-top,0px))}
+
+  /* janelas: folha inferior / tela cheia */
+  .ov{padding:0;place-items:end center}
+  .box{width:100%;max-width:100%;max-height:92dvh;border-radius:20px 20px 0 0;padding:1rem 1rem calc(1rem + env(safe-area-inset-bottom,0px));animation-name:slideUp}
+  .box.wide{height:100dvh;max-height:100dvh;border-radius:0;padding:0}
+  .box.sheet{width:100%;max-width:100%;border-radius:20px 20px 0 0}
+  .pdet{height:100%;max-height:none;overflow:auto}
+  .pdm{max-height:56dvh}
+  .pdc{max-height:none}
+  #ask{place-items:center;padding:1rem}
+  .askb{border-radius:16px}
+  .sbox{width:100%;height:100dvh;border-radius:0}
+  .bars{top:calc(8px + env(safe-area-inset-top,0px))}
+  .sh{top:calc(18px + env(safe-area-inset-top,0px))}
+  .pdr .pin{padding-bottom:calc(.2rem + env(safe-area-inset-bottom,0px))}
+  .drop{min-height:160px}
+
+  /* login em tela cheia */
+  #auth{max-width:100%;min-height:100dvh;margin:0;padding:calc(2.5rem + env(safe-area-inset-top,0px)) 1.4rem calc(2rem + env(safe-area-inset-bottom,0px));border:0;border-radius:0;display:flex;flex-direction:column;justify-content:center}
+  #auth h1{font-size:2.8rem}
+  #auth img{align-self:center}
+  .toast{bottom:calc(var(--apptab) + 14px);max-width:calc(100vw - 2rem);text-align:center}
+}
 </style>
 </head>
 <body>
@@ -318,6 +451,7 @@ main{margin-left:72px}
 </section>
 
 <div id="app" class="hide">
+  <header id="mhead"></header>
   <nav id="side"></nav>
   <main><div id="view"></div></main>
   <button id="pill" class="hide" onclick="go('chats')"></button>
@@ -381,6 +515,7 @@ const IC = {
   eyeoff: '<path d="M3 3l18 18"/><path d="M10.6 5.2A10.9 10.9 0 0 1 12 5c6.4 0 10 7 10 7a17.6 17.6 0 0 1-3.3 4.3M6.4 6.5A17.6 17.6 0 0 0 2 12s3.6 7 10 7a10.7 10.7 0 0 0 4.1-.8"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/>',
   heart: '<path d="M12 20.8S3.5 15.7 3.5 9.4A4.7 4.7 0 0 1 12 6.8a4.7 4.7 0 0 1 8.5 2.6c0 6.3-8.5 11.4-8.5 11.4z"/>',
   plus: '<path d="M12 4.5v15M4.5 12h15"/>',
+  back: '<path d="M15 5l-7 7 7 7"/>',
   menu: '<path d="M4 6h16M4 12h16M4 18h16"/>',
   comment: '<path d="M20.8 11.6a8.6 8.6 0 0 1-12.4 7.7L3.5 20.5l1.3-4.5a8.6 8.6 0 1 1 16-4.4z"/>',
   repost: '<path d="m17 2.5 3.5 3.5L17 9.5"/><path d="M3.5 11V9.5A3.5 3.5 0 0 1 7 6h13.5"/><path d="m7 21.5-3.5-3.5L7 14.5"/><path d="M20.5 13v1.5A3.5 3.5 0 0 1 17 18H3.5"/>',
@@ -542,9 +677,15 @@ function renderSide() {
     ${items.map(nv).join('')}
     <button class="nv" data-p="search" onclick="togglePanel('search')"><i class="ii">${I('search', 26)}</i><span>Pesquisa</span></button>
     <button class="nv" data-p="notifs" onclick="togglePanel('notifs')"><i class="ii">${I('heart', 26)}<em class="bd hide" id="bd-n"></em></i><span>Notificações</span></button>
-    <button class="nv" onclick="newPost()"><i class="ii">${I('plus', 26)}</i><span>Criar</span></button>
+    <button class="nv" data-act="create" onclick="newPost()"><i class="ii">${I('plus', 26)}</i><span>Criar</span></button>
     <button class="nv" data-v="profile" onclick="go('profile',me.username)"><i class="ii">${av(me, 26)}</i><span>Perfil</span></button>
     <button class="nv sp" data-more="1" onclick="toggleMore(event)"><i class="ii">${I('menu', 26)}</i><span>Mais</span></button>`;
+  $('mhead').innerHTML = `<button class="mh-logo" onclick="go('home')" aria-label="Início"><img src="/logo_anarchy.png" alt=""><span>Anarchy</span></button>
+    <div class="mh-actions">
+      <button class="ib" onclick="togglePanel('search')" aria-label="Pesquisar">${I('search', 24)}</button>
+      <button class="ib" onclick="togglePanel('notifs')" aria-label="Notificações"><i class="ii">${I('heart', 24)}<em class="bd hide" id="bd-n2"></em></i></button>
+      <button class="ib" onclick="toggleMore(event)" aria-label="Mais opções">${I('menu', 24)}</button>
+    </div>`;
   $('pill').innerHTML = `<i class="ii" style="position:relative">${I('send', 24)}<em class="bd hide" id="bd-p"></em></i>Mensagens${av(me, 28)}`;
   markNav(); badges(true);
 }
@@ -555,11 +696,15 @@ async function badges(local) {
   const set = (id, n) => { const e = $(id); if (!e) return; e.textContent = n > 8 ? '9+' : n; e.classList.toggle('hide', !n); };
   set('bd-m', unread); set('bd-p', unread);
   if (local) return;
-  try { set('bd-n', (await api('/api/notifs/count')).n); } catch {}
+  try {
+    const n = (await api('/api/notifs/count')).n;
+    set('bd-n', n); set('bd-n2', n);
+  } catch {}
 }
 
 function go(v, arg) {
   view = v; if (au) au.pause(); dmReset(); chatLoadId++; peer = null; if (v !== 'chats') pendingPeer = null;
+  document.body.classList.remove('chatopen');
   closePanel(true); closeMore(true); closeM(true); closeS(true);
   const el = $('view'); el.className = ''; void el.offsetWidth; el.className = 'fx';
   $('pill').classList.toggle('hide', v === 'chats');
@@ -602,8 +747,8 @@ function closeMore(now) {
   d.classList.add('out'); setTimeout(() => d.remove(), 150);
 }
 document.addEventListener('mousedown', (e) => {
-  if ($('more') && !e.target.closest('#more')) closeMore();
-  if (panel && !e.target.closest('#panel') && !e.target.closest('#side') && !e.target.closest('.ov')) closePanel();
+  if ($('more') && !e.target.closest('#more') && !e.target.closest('#mhead')) closeMore();
+  if (panel && !e.target.closest('#panel') && !e.target.closest('#side') && !e.target.closest('#mhead') && !e.target.closest('.ov')) closePanel();
 });
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') { if ($('m')) closeM(); else if ($('sv')) closeS(); else if ($('more')) closeMore(); else if (panel) closePanel(); }
@@ -617,7 +762,7 @@ async function loadNotifs(first) {
   try { nfAll = await api('/api/notifs'); } catch { return; }
   if (panel !== 'notifs') return;
   renderNotifs(first);
-  if (nfAll.some((n) => !n.seen)) { await api('/api/notifs/read', { method: 'POST' }); const b = $('bd-n'); if (b) b.classList.add('hide'); }
+  if (nfAll.some((n) => !n.seen)) { await api('/api/notifs/read', { method: 'POST' }); ['bd-n', 'bd-n2'].forEach((id) => { const b = $(id); if (b) b.classList.add('hide'); }); }
 }
 function renderNotifs(anim) {
   const d = $('panel'); if (!d || panel !== 'notifs') return;
@@ -1531,7 +1676,9 @@ async function openChat(id, name) {
   dmReset();
   peer = { id, name };
   document.querySelectorAll('#cl .rq').forEach((b) => b.classList.toggle('on', +b.dataset.id === id));
-  $('room').innerHTML = `<div class="rh"><span class="rhname" title="${esc(name)}">${name === 'Conversa' ? esc(name) : ul(name, esc(name))}</span><span class="rhactions"><button class="ib" onclick="togglePinChat(${id})" title="Fixar/desafixar conversa" aria-label="Fixar conversa">${I('shield', 16)}</button><button class="ib" onclick="deleteChat(${id})" title="Excluir conversa" aria-label="Excluir conversa">${I('x', 16)}</button></span></div><div id="msgs"></div><form id="send" onsubmit="sendMsg(event)"><input id="mt" placeholder="Mensagem..." autocomplete="off"><button type="button" class="ib" onclick="pickDMFile()" title="Anexar foto ou vídeo" aria-label="Anexar mídia">${I('camera', 18)}</button><button type="button" class="ib" onclick="pickDMAudio()" title="Enviar áudio do dispositivo" aria-label="Enviar áudio">${I('music', 18)}</button><button type="button" class="ib" onclick="openEmojiPicker('mt')" title="Emoji" aria-label="Emoji">${I('smile', 18)}</button><button class="bl">Enviar</button></form>`;
+  document.body.classList.add('chatopen');
+  const chatEl = $('chat'); if (chatEl) chatEl.classList.add('room-open');
+  $('room').innerHTML = `<div class="rh"><button class="ib backbtn" onclick="go('chats')" aria-label="Voltar">${I('back', 20)}</button><span class="rhname" title="${esc(name)}">${name === 'Conversa' ? esc(name) : ul(name, esc(name))}</span><span class="rhactions"><button class="ib" onclick="togglePinChat(${id})" title="Fixar/desafixar conversa" aria-label="Fixar conversa">${I('shield', 16)}</button><button class="ib" onclick="deleteChat(${id})" title="Excluir conversa" aria-label="Excluir conversa">${I('x', 16)}</button></span></div><div id="msgs"></div><form id="send" onsubmit="sendMsg(event)"><input id="mt" placeholder="Mensagem..." autocomplete="off"><button type="button" class="ib" onclick="pickDMFile()" title="Anexar foto ou vídeo" aria-label="Anexar mídia">${I('camera', 18)}</button><button type="button" class="ib" onclick="pickDMAudio()" title="Enviar áudio do dispositivo" aria-label="Enviar áudio">${I('music', 18)}</button><button type="button" class="ib" onclick="openEmojiPicker('mt')" title="Emoji" aria-label="Emoji">${I('smile', 18)}</button><button class="bl">Enviar</button></form>`;
   try {
     const msgs = await api('/api/messages/' + id);
     if (view !== 'chats' || !peer || peer.id !== id || req !== chatLoadId) return;
