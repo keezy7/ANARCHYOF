@@ -25,7 +25,7 @@ const pool = new Pool({
         song_start INTEGER DEFAULT 0,
         song_dur INTEGER DEFAULT 0,
         username_change_count INTEGER DEFAULT 0,
-        last_username_change INTEGER DEFAULT 0,
+        last_username_change BIGINT DEFAULT 0,
         deactivated INTEGER DEFAULT 0
       );
       CREATE TABLE IF NOT EXISTS follows(
@@ -42,7 +42,7 @@ const pool = new Pool({
       CREATE TABLE IF NOT EXISTS pinned_chats(
         user_id INTEGER,
         peer_id INTEGER,
-        pinned_at INTEGER NOT NULL,
+        pinned_at BIGINT NOT NULL,
         PRIMARY KEY(user_id, peer_id)
       );
       CREATE TABLE IF NOT EXISTS posts(
@@ -52,11 +52,11 @@ const pool = new Pool({
         media TEXT,
         type TEXT,
         repost_of INTEGER,
-        created INTEGER NOT NULL,
+        created BIGINT NOT NULL,
         song_preview TEXT DEFAULT '',
         song_duration INTEGER DEFAULT 0,
         deleted INTEGER DEFAULT 0,
-        edited_at INTEGER DEFAULT 0,
+        edited_at BIGINT DEFAULT 0,
         pinned INTEGER DEFAULT 0
       );
       CREATE TABLE IF NOT EXISTS likes(
@@ -69,8 +69,8 @@ const pool = new Pool({
         post_id INTEGER NOT NULL,
         user_id INTEGER NOT NULL,
         text TEXT NOT NULL,
-        created INTEGER NOT NULL,
-        edited_at INTEGER DEFAULT 0,
+        created BIGINT NOT NULL,
+        edited_at BIGINT DEFAULT 0,
         deleted INTEGER DEFAULT 0
       );
       CREATE TABLE IF NOT EXISTS stories(
@@ -78,15 +78,15 @@ const pool = new Pool({
         user_id INTEGER NOT NULL,
         media TEXT,
         type TEXT,
-        created INTEGER NOT NULL,
-        expires_at INTEGER DEFAULT 0,
+        created BIGINT NOT NULL,
+        expires_at BIGINT DEFAULT 0,
         mentions TEXT DEFAULT ''
       );
       CREATE TABLE IF NOT EXISTS story_views(
         id SERIAL PRIMARY KEY,
         story_id INTEGER,
         viewer_id INTEGER,
-        viewed_at INTEGER NOT NULL,
+        viewed_at BIGINT NOT NULL,
         is_unique INTEGER DEFAULT 1
       );
       CREATE TABLE IF NOT EXISTS story_reactions(
@@ -95,7 +95,7 @@ const pool = new Pool({
         user_id INTEGER,
         type TEXT NOT NULL,
         text TEXT DEFAULT '',
-        created INTEGER NOT NULL
+        created BIGINT NOT NULL
       );
       CREATE TABLE IF NOT EXISTS messages(
         id SERIAL PRIMARY KEY,
@@ -105,8 +105,8 @@ const pool = new Pool({
         post_id INTEGER,
         media TEXT,
         type TEXT,
-        created INTEGER NOT NULL,
-        edited_at INTEGER DEFAULT 0,
+        created BIGINT NOT NULL,
+        edited_at BIGINT DEFAULT 0,
         deleted INTEGER DEFAULT 0
       );
       CREATE TABLE IF NOT EXISTS tags(
@@ -121,13 +121,13 @@ const pool = new Pool({
         type TEXT NOT NULL,
         post_id INTEGER,
         story_id INTEGER,
-        created INTEGER NOT NULL,
+        created BIGINT NOT NULL,
         seen INTEGER DEFAULT 0
       );
       CREATE TABLE IF NOT EXISTS chat_reads(
         user_id INTEGER,
         peer_id INTEGER,
-        last_read INTEGER NOT NULL,
+        last_read BIGINT NOT NULL,
         PRIMARY KEY(user_id, peer_id)
       );
     `);
@@ -140,7 +140,7 @@ const pool = new Pool({
     };
 
     await addCol('users', 'username_change_count', 'INTEGER DEFAULT 0');
-    await addCol('users', 'last_username_change', 'INTEGER DEFAULT 0');
+    await addCol('users', 'last_username_change', 'BIGINT DEFAULT 0');
     await addCol('users', 'verified_color', "TEXT DEFAULT ''");
     await addCol('users', 'song_start', 'INTEGER DEFAULT 0');
     await addCol('users', 'song_dur', 'INTEGER DEFAULT 0');
@@ -148,15 +148,15 @@ const pool = new Pool({
     await addCol('posts', 'song_preview', "TEXT DEFAULT ''");
     await addCol('posts', 'song_duration', 'INTEGER DEFAULT 0');
     await addCol('posts', 'deleted', 'INTEGER DEFAULT 0');
-    await addCol('posts', 'edited_at', 'INTEGER DEFAULT 0');
+    await addCol('posts', 'edited_at', 'BIGINT DEFAULT 0');
     await addCol('posts', 'pinned', 'INTEGER DEFAULT 0');
-    await addCol('comments', 'edited_at', 'INTEGER DEFAULT 0');
+    await addCol('comments', 'edited_at', 'BIGINT DEFAULT 0');
     await addCol('comments', 'deleted', 'INTEGER DEFAULT 0');
-    await addCol('stories', 'expires_at', 'INTEGER DEFAULT 0');
+    await addCol('stories', 'expires_at', 'BIGINT DEFAULT 0');
     await addCol('stories', 'mentions', "TEXT DEFAULT ''");
     await addCol('messages', 'media', 'TEXT DEFAULT \'\'');
     await addCol('messages', 'type', 'TEXT DEFAULT \'\'');
-    await addCol('messages', 'edited_at', 'INTEGER DEFAULT 0');
+    await addCol('messages', 'edited_at', 'BIGINT DEFAULT 0');
     await addCol('messages', 'deleted', 'INTEGER DEFAULT 0');
     await addCol('notifs', 'story_id', 'INTEGER');
     await addCol('notifs', 'text', "TEXT DEFAULT ''");
