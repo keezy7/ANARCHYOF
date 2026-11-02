@@ -457,7 +457,7 @@ app.get('/api/u/:name', auth, async (req, res) => {
   const ok = await canSee(me, u);
   const r = await rel(me, u.id);
 
-  const countPosts = await num('SELECT COUNT(*) n FROM posts WHERE user_id=$1 AND repost_of IS NULL', [u.id]);
+  const countPosts = await num('SELECT COUNT(*) n FROM posts WHERE user_id=$1 AND deleted=0', [u.id]);
   const countFollowers = await num("SELECT COUNT(*) n FROM follows WHERE followee=$1 AND status='ok'", [u.id]);
   const countFollowing = await num("SELECT COUNT(*) n FROM follows WHERE follower=$1 AND status='ok'", [u.id]);
 
