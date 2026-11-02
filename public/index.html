@@ -343,9 +343,9 @@ const rt = (t) => {
   if (s < 604800) return Math.floor(s / 86400) + ' d'; if (s < 2592000) return Math.floor(s / 604800) + ' sem';
   return new Date(t).toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' });
 };
-const vf = (v, username) => {
+const vf = (v, username, color) => {
   if (!v) return '';
-  const c = username ? VCLR[String(username).toLowerCase()] : '';
+  const c = /^#[0-9a-f]{6}$/i.test(color || '') ? color : (username ? VCLR[String(username).toLowerCase()] : '');
   return `<span class="vf" title="Verificado"${c ? ` style="background:${esc(c)}"` : ''}>✓</span>`;
 };
 const av = (u, s = 32) => (u && u.avatar
@@ -480,7 +480,7 @@ async function loadBadgeColors() {
 }
 
 async function refreshUnread() {
-  try { const list = await api('/api/chats'); unread = list.reduce((a, u) => a + (u.unread || 0), 0); badges(); } catch {}
+  try { const list = await api('/api/chats'); unread = list.reduce((a, u) => a + (Number(u.unread) || 0), 0); badges(); } catch {}
 }
 
 async function auth(k) {
@@ -552,7 +552,7 @@ function markNav() {
   document.querySelectorAll('.nv').forEach((b) => b.classList.toggle('on', panel ? b.dataset.p === panel : b.dataset.v === view));
 }
 async function badges(local) {
-  const set = (id, n) => { const e = $(id); if (!e) return; e.textContent = n > 8 ? '9+' : n; e.classList.toggle('hide', !n); };
+  const set = (id, n) => { const e = $(id); if (!e) return; e.textContent = n > 9 ? '9+' : n; e.classList.toggle('hide', !n); };
   set('bd-m', unread); set('bd-p', unread);
   if (local) return;
   try { set('bd-n', (await api('/api/notifs/count')).n); } catch {}
@@ -636,7 +636,7 @@ function renderNotifs(anim) {
       const storyPrev = n.media ? (n.ptype === 'video' ? `<video class="sp" src="${n.media}#t=0.1" muted preload="metadata"></video>` : `<img class="sp" src="${n.media}" alt="">`) : '';
       const bubble = n.type === 'story_reply' && n.text ? `<div class="sb"><div class="st">${esc(n.text)}</div></div>` : '';
       return `<div class="nt ${n.seen ? '' : 'new'}" style="--i:${i++};${anim ? 'animation:rise .4s var(--ease) both;animation-delay:' + Math.min(i, 12) * 40 + 'ms' : ''}" onclick="${click}">${av(n, 44)}
-        <div class="tx">${ul(n.username, `<b>${esc(n.username)}</b>`)}${vf(n.verified,n.username)} ${NT[n.type] || ''} <small>${rt(n.created)}</small>
+        <div class="tx">${ul(n.username, `<b>${esc(n.username)}</b>`)}${vf(n.verified,n.username,n.verified_color)} ${NT[n.type] || ''} <small>${rt(n.created)}</small>
         ${bubble ? `<div class="sw">${storyPrev}${bubble}</div>` : ''}</div>${act}</div>`;
     }).join('');
   });
@@ -865,14 +865,14 @@ const tagsLine = (p) => (p.tags && p.tags.length ? `<p class="tg"><small>com</sm
 const cmts = (p, full) => {
   const list = full ? p.comments : p.comments.slice(-2);
   return (!full && p.ncomments > 2 ? `<span class="more" onclick="openPost(${p.id})">Ver todos os ${p.ncomments} comentários</span>` : '')
-    + list.map((c) => `<p data-cid="${c.id}">${ul(c.username, `<b>${esc(c.username)}</b>`)}${vf(c.verified,c.username)} <span class="ct">${linkify(esc(c.text))}</span>${c.edited_at ? ' <small class="ed" style="color:var(--mute)">editado</small>' : ''}
+    + list.map((c) => `<p data-cid="${c.id}">${ul(c.username, `<b>${esc(c.username)}</b>`)}${vf(c.verified,c.username,c.verified_color)} <span class="ct">${linkify(esc(c.text))}</span>${c.edited_at ? ' <small class="ed" style="color:var(--mute)">editado</small>' : ''}
       ${c.user_id === me.id ? `<button class="gh" onclick="editComment(${p.id},${c.id},this)" style="font-size:.7rem;padding:.15rem .5rem;border-radius:6px;margin-left:.4rem">Editar</button><button class="gh" onclick="deleteComment(${p.id},${c.id})" style="font-size:.7rem;padding:.15rem .5rem;border-radius:6px;margin-left:.3rem">Excluir</button>` : ''}</p>`).join('');
 };
 function postCard(p, i = 0) {
   P[p.id] = p;
   return `<article class="post" id="p${p.id}" style="--i:${i}">
   <div class="ph"><a onclick="go('profile','${p.username}')">${av(p, 36)}</a>
-    <div class="who"><b onclick="go('profile','${p.username}')">${esc(p.username)}</b>${vf(p.verified,p.username)}<small> • ${rt(p.created)}</small>
+    <div class="who"><b onclick="go('profile','${p.username}')">${esc(p.username)}</b>${vf(p.verified,p.username,p.verified_color)}<small> • ${rt(p.created)}</small>
     ${p.orig ? `<div class="ro">↻ republicado de ${ul(p.orig, '@' + esc(p.orig))}</div>` : ''}</div>
     <button class="mo" onclick="postMenu(${p.id})" aria-label="Mais">${I('dots', 22)}</button></div>
   <div class="pm" ondblclick="dbl(${p.id},this)">${media(p)}</div>
@@ -888,7 +888,7 @@ function postDetail(p) {
   P[p.id] = p;
   const fullscreenBtn = p.type === 'video' ? `<button class="ib" onclick="toggleFullscreenVideo()" aria-label="Tela cheia">${I('expand', 20)}</button>` : '';
   return `<div class="pdet"><div class="pdm">${media(p, true)}</div><div class="pdr">
-    <div class="pdh">${av(p, 34)}<b onclick="go('profile','${p.username}')">${esc(p.username)}${vf(p.verified,p.username)}</b>${fullscreenBtn}<button class="ib" onclick="postMenu(${p.id})" aria-label="Mais opções" style="margin-left:auto">${I('dots', 20)}</button><button class="ib" onclick="closeM()" aria-label="Fechar">${I('x', 20)}</button></div>
+    <div class="pdh">${av(p, 34)}<b onclick="go('profile','${p.username}')">${esc(p.username)}${vf(p.verified,p.username,p.verified_color)}</b>${fullscreenBtn}<button class="ib" onclick="postMenu(${p.id})" aria-label="Mais opções" style="margin-left:auto">${I('dots', 20)}</button><button class="ib" onclick="closeM()" aria-label="Fechar">${I('x', 20)}</button></div>
     <div class="pdc">${p.caption ? `<p>${ul(p.username, `<b>${esc(p.username)}</b>`)} ${linkify(esc(p.caption))}</p>` : ''}${tagsLine(p)}
     ${p.song_preview ? `<div class="song" style="margin:.4rem 0"><button onclick="playSongPost('${esc(p.song_preview)}',${p.id})" aria-label="Tocar prévia">▶</button><input type="range" min="0" max="${p.song_duration || 30}" value="0" style="width:110px;margin-left:.4rem"><small style="color:var(--mute)">Prévia da música</small></div>` : ''}
     <div data-cl="${p.id}" data-full="1">${cmts(p, true) || '<small>Sem comentários ainda.</small>'}</div></div>
@@ -1119,11 +1119,11 @@ function renderStories() {
   const el = $('sts'); if (!el) return;
   const own = G.some((g) => g.uid === me.id);
   el.innerHTML = `${own ? '' : `<button class="st" onclick="newPost('story')"><div class="ring seen">${av(me, 62)}</div><small>Seu story</small></button>`}
-    ${G.map((g, i) => `<button class="st" onclick="openStory(${i})"><div class="ring ${g.seen ? 'seen' : ''}">${av(g, 62)}${vf(g.verified,g.username)}</div><small>${g.uid === me.id ? 'Seu story' : esc(g.username)}</small></button>`).join('')}`;
+    ${G.map((g, i) => `<button class="st" onclick="openStory(${i})"><div class="ring ${g.seen ? 'seen' : ''}">${av(g, 62)}${vf(g.verified,g.username,g.verified_color)}</div><small>${g.uid === me.id ? 'Seu story' : esc(g.username)}</small></button>`).join('')}`;
 }
 async function renderRight() {
   const rc = $('rc'); if (!rc) return;
-  rc.innerHTML = `<div class="acc">${av(me, 44)}<span><b onclick="go('profile',me.username)">${esc(me.username)}${vf(me.verified,me.username)}</b><small>${esc(me.name || '')}</small></span><button class="lnk" onclick="switchAccountUI()">Trocar</button></div>
+  rc.innerHTML = `<div class="acc">${av(me, 44)}<span><b onclick="go('profile',me.username)">${esc(me.username)}${vf(me.verified,me.username,me.verified_color)}</b><small>${esc(me.name || '')}</small></span><button class="lnk" onclick="switchAccountUI()">Trocar</button></div>
     <div class="row" style="justify-content:space-between;margin-bottom:.5rem"><b style="color:var(--mute)">Sugestões para você</b><button class="lnk" style="color:var(--ink);font-size:.8rem" onclick="allSuggest()">Ver tudo</button></div>
     <div id="sgl"></div>
     <div class="foot">© 2026 Anarchy</div>`;
@@ -1132,7 +1132,7 @@ async function renderRight() {
     if ($('sgl')) $('sgl').innerHTML = us.map(sgRow).join('') || '<small>Sem sugestões por enquanto.</small>';
   } catch {}
 }
-const sgRow = (u, i = 0) => `<div class="sg" style="animation-delay:${i * 60}ms">${av(u, 44)}<span><b onclick="go('profile','${u.username}')">${esc(u.username)}${vf(u.verified,u.username)}</b><small>${u.via ? 'Seguido(a) por ' + esc(u.via) : 'Sugestões para você'}</small></span><button class="lnk" onclick="sfollow(${u.id},this)">Seguir</button></div>`;
+const sgRow = (u, i = 0) => `<div class="sg" style="animation-delay:${i * 60}ms">${av(u, 44)}<span><b onclick="go('profile','${u.username}')">${esc(u.username)}${vf(u.verified,u.username,u.verified_color)}</b><small>${u.via ? 'Seguido(a) por ' + esc(u.via) : 'Sugestões para você'}</small></span><button class="lnk" onclick="sfollow(${u.id},this)">Seguir</button></div>`;
 async function sfollow(id, b) { const r = await api('/api/follow/' + id, { method: 'POST' }); b.textContent = RL[r.status]; b.classList.toggle('off', r.status !== 'none'); }
 async function allSuggest() {
   const us = await api('/api/suggestions?limit=30');
@@ -1192,7 +1192,7 @@ function openStory(gi, si = 0) {
   stGi = gi;
   stSid = s.id;
   o.innerHTML = `<div class="sbox ${first ? 'first' : dir > 0 ? 'inR' : dir < 0 ? 'inL' : ''}"><div class="bars">${g.items.map((_, i) => `<i class="${i < si ? 'f' : ''}">${i === si ? '<b id="sb"></b>' : ''}</i>`).join('')}</div>
-    <div class="sh">${av(g, 32)}${vf(g.verified,g.username)}${ul(g.username, `<b>${esc(g.username)}</b>`)}<small>${rt(s.created)}</small>
+    <div class="sh">${av(g, 32)}${vf(g.verified,g.username,g.verified_color)}${ul(g.username, `<b>${esc(g.username)}</b>`)}<small>${rt(s.created)}</small>
       ${s.mentions ? `<small style="color:#8fa0ff"> ${s.mentions.split(',').filter(Boolean).map((n) => `<a onclick="closeS();go('profile','${esc(n)}')" style="cursor:pointer">@${esc(n)}</a>`).join(' ')} </small>` : ''}
       <div class="hr">${volCtl('story')}<button id="spb" onclick="storyTogglePause()" aria-label="Pausar" style="color:#fff">${I('pause', 20)}</button>${own ? `<button onclick="storyMenu(${s.id})" aria-label="Mais opções" style="color:#fff">${I('dots', 20)}</button>` : ''}<button onclick="closeS()" aria-label="Fechar">${I('x', 22)}</button></div></div>
     ${vid ? `<video class="sm" src="${s.media}" autoplay playsinline></video>` : `<img class="sm" src="${s.media}" alt="">`}
@@ -1228,7 +1228,7 @@ function search(q) {
     const r = $('sres'); if (!r) return;
     if (!q.trim()) { r.innerHTML = '<p class="empty">Digite um nome ou @usuário.</p>'; return; }
     const us = await api('/api/search?q=' + encodeURIComponent(q.replace(/^@/, '')));
-    if ($('sres')) $('sres').innerHTML = us.map((u, i) => `<div class="rq" style="animation:rise .35s var(--ease) both;animation-delay:${i * 40}ms" onclick="go('profile','${u.username}')">${av(u, 44)}<span><b>${esc(u.username)}${vf(u.verified,u.username)}</b><small>${esc(u.name || '')}</small></span></div>`).join('') || '<p class="empty">Ninguém encontrado.</p>';
+    if ($('sres')) $('sres').innerHTML = us.map((u, i) => `<div class="rq" style="animation:rise .35s var(--ease) both;animation-delay:${i * 40}ms" onclick="go('profile','${u.username}')">${av(u, 44)}<span><b>${esc(u.username)}${vf(u.verified,u.username,u.verified_color)}</b><small>${esc(u.name || '')}</small></span></div>`).join('') || '<p class="empty">Ninguém encontrado.</p>';
   }, 250);
 }
 
@@ -1241,7 +1241,7 @@ async function reels() {
     <div class="pp">${I('play', 34)}</div>
     <div class="rtop"><button class="mute rmore" onclick="postMenu(${p.id})" aria-label="Mais opções">${I('dots', 16)}</button>${volCtl('feed')}</div>
     <div class="ra" data-pa="${p.id}">${acts(p)}</div>
-    <div class="ri"><div class="row">${av(p, 34)}<b onclick="go('profile','${p.username}')">${esc(p.username)}</b>${vf(p.verified,p.username)}<small style="color:#ccc">• ${rt(p.created)}</small></div>${p.caption ? `<p>${linkify(esc(p.caption))}</p>` : ''}${tagsLine(p)}</div></section>`; }).join('')
+    <div class="ri"><div class="row">${av(p, 34)}<b onclick="go('profile','${p.username}')">${esc(p.username)}</b>${vf(p.verified,p.username,p.verified_color)}<small style="color:#ccc">• ${rt(p.created)}</small></div>${p.caption ? `<p>${linkify(esc(p.caption))}</p>` : ''}${tagsLine(p)}</div></section>`; }).join('')
     || `<div class="eg" style="margin:auto">${I('reels', 48)}<h3>Nenhum reel ainda</h3><p class="empty">Os vídeos publicados aparecem aqui.</p></div>`;
   watch();
 }
@@ -1286,7 +1286,7 @@ async function profile(name) {
     ? `<button class="gh" onclick="editProfile()">Editar perfil</button><button class="gh" onclick="changeUsernameUI()">Trocar username</button><button class="gh" onclick="shareProfile('${u.username}')">Compartilhar perfil</button>`
     : `<button class="${d.rel === 'none' ? 'bl' : 'gh'}" onclick="follow(${u.id},'${u.username}')">${RL[d.rel]}</button><button class="gh" onclick="openChat(${u.id},'${u.username}')">Mensagem</button><button class="gh" onclick="blockUser(${u.id})">Bloquear @${esc(u.username)}</button>`;
   $('view').innerHTML = `<div class="prof"><div class="pt"><div class="pav">${hasStory ? `<button class="pavring ${ringCls}" onclick="openProfileStory('${esc(u.username)}')" title="Ver story" aria-label="Ver story">${av(u, 150)}</button>` : av(u, 150)}</div><div class="pi">
-      <div class="row"><h2>${esc(u.username)}${vf(u.verified,u.username)}</h2>${u.private ? `<small title="Conta privada">${I('lock', 16)}</small>` : ''}</div>
+      <div class="row"><h2>${esc(u.username)}${vf(u.verified,u.username,u.verified_color)}</h2>${u.private ? `<small title="Conta privada">${I('lock', 16)}</small>` : ''}</div>
       <div class="cnt"><span><b>${d.count.posts}</b> posts</span><span><b>${d.count.followers}</b> seguidores</span><span><b>${d.count.following}</b> seguindo</span></div>
       <div class="bio"><b>${esc(u.name || '')}</b><p>${linkify(esc(u.bio || ''))}</p>
       ${u.song_url ? `<div class="song"><button data-src="${esc(u.song_url)}" data-start="${u.song_start || 0}" data-dur="${u.song_dur || 0}" onclick="playSong(this)" aria-label="Tocar prévia">▶</button>${u.song_art ? `<img src="${esc(u.song_art)}" alt="">` : ''}<span><b>${esc(u.song_title)}</b><small>${esc(u.song_artist)}</small></span></div>` : ''}</div></div></div>
@@ -1503,10 +1503,10 @@ async function loadChatList() {
   try {
     chatUsers = await api('/api/chats');
     if (!$('cl')) return;
-    unread = chatUsers.reduce((a, u) => a + (u.unread || 0), 0); badges(true);
+    unread = chatUsers.reduce((a, u) => a + (Number(u.unread) || 0), 0); badges(true);
     $('cl').innerHTML = '<h3>Mensagens</h3>' + (chatUsers.map((u) => {
-      const n = u.unread || 0;
-      return `<div class="rq${n ? ' unread' : ''}" data-id="${u.id}" role="button" tabindex="0" onclick="openChat(${u.id},'${esc(u.username)}')">${av(u, 48)}<span>${ul(u.username, `<b>${esc(u.username)}${vf(u.verified, u.username)}</b>`)}<small class="pv">${chatPreview(u)}</small></span>${n ? `<em class="cbd" title="${n} mensagens novas">${n > 8 ? '9+' : n}</em>` : ''}</div>`;
+      const n = Number(u.unread) || 0;
+      return `<div class="rq${n ? ' unread' : ''}" data-id="${u.id}" role="button" tabindex="0" onclick="openChat(${u.id},'${esc(u.username)}')">${av(u, 48)}<span>${ul(u.username, `<b>${esc(u.username)}${vf(u.verified, u.username, u.verified_color)}</b>`)}<small class="pv">${chatPreview(u)}</small></span>${n ? `<em class="cbd" title="${n} mensagens novas">${n > 9 ? '9+' : n}</em>` : ''}</div>`;
     }).join('') || '<p class="empty">Siga alguém para começar uma conversa.</p>');
     if (peer) document.querySelectorAll('#cl .rq').forEach((b) => b.classList.toggle('on', +b.dataset.id === peer.id));
   } catch {
@@ -1739,7 +1739,7 @@ async function commentStory(storyId, inp) {
 }
 async function loadStoryReactions(storyId) {
   storyPause();
-  try { const r = await api(`/api/stories/${storyId}/reactions`); modal(`<h3>Reações</h3>${r.map((x) => `<div class="rq">${av(x, 40)}<span>${ul(x.username, `<b>${esc(x.username)}${vf(x.verified,x.username)}</b>`)}<small>${x.type === 'like' ? '❤️ curtiu' : '💬 ' + esc(x.text)}</small></span></div>`).join('') || '<p class="empty">Sem reações.</p>'}`); } catch (e) { toast(e.message); }
+  try { const r = await api(`/api/stories/${storyId}/reactions`); modal(`<h3>Reações</h3>${r.map((x) => `<div class="rq">${av(x, 40)}<span>${ul(x.username, `<b>${esc(x.username)}${vf(x.verified,x.username,x.verified_color)}</b>`)}<small>${x.type === 'like' ? '❤️ curtiu' : '💬 ' + esc(x.text)}</small></span></div>`).join('') || '<p class="empty">Sem reações.</p>'}`); } catch (e) { toast(e.message); }
 }
 
 // ---- Visualizacoes de Story ----
@@ -1748,7 +1748,7 @@ async function viewStory(storyId) {
 }
 async function getStoryViews(storyId) {
   storyPause();
-  try { const r = await api(`/api/stories/${storyId}/views`); modal(`<h3>Visualizações</h3><p><b>${r.count}</b> ${r.count === 1 ? 'perfil viu' : 'perfis viram'} esta story.</p>${r.viewers.map((v) => `<div class="rq">${av(v, 40)}<span>${ul(v.username, `<b>${esc(v.username)}${vf(v.verified,v.username)}</b>`)}<small>${rt(v.viewed_at)}</small></span></div>`).join('')}`); } catch (e) { toast(e.message); }
+  try { const r = await api(`/api/stories/${storyId}/views`); modal(`<h3>Visualizações</h3><p><b>${r.count}</b> ${r.count === 1 ? 'perfil viu' : 'perfis viram'} esta story.</p>${r.viewers.map((v) => `<div class="rq">${av(v, 40)}<span>${ul(v.username, `<b>${esc(v.username)}${vf(v.verified,v.username,v.verified_color)}</b>`)}<small>${rt(v.viewed_at)}</small></span></div>`).join('')}`); } catch (e) { toast(e.message); }
 }
 
 // ---- Trocar Username ----

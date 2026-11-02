@@ -398,7 +398,7 @@ app.get('/api/badge-colors', auth, async (req, res) => {
   const rows = await all("SELECT LOWER(username) AS username, verified_color FROM users WHERE verified=1 AND verified_color<>''");
   res.json(rows);
 });
-const POST = `SELECT p.id,p.caption,p.media,p.type,p.created,p.user_id,p.repost_of,u.username,u.avatar,u.verified,ou.username AS orig,p.song_preview,p.song_duration,p.edited_at,
+const POST = `SELECT p.id,p.caption,p.media,p.type,p.created,p.user_id,p.repost_of,u.username,u.avatar,u.verified,u.verified_color,ou.username AS orig,p.song_preview,p.song_duration,p.edited_at,
  (SELECT COUNT(*) FROM likes WHERE post_id=p.id) AS likes,
  (SELECT COUNT(*) FROM comments WHERE post_id=p.id AND deleted=0) AS ncomments,
  (SELECT COUNT(*) FROM posts r WHERE r.repost_of=COALESCE(p.repost_of,p.id) AND r.deleted=0) AS reposts,
@@ -411,7 +411,7 @@ const fin = async (rows, me) => {
   const out = [];
   for (const p of rows) {
     const tags = await all('SELECT u.username FROM tags t JOIN users u ON u.id=t.user_id WHERE t.post_id=$1 ORDER BY u.username', [p.id]);
-    const comments = await all('SELECT c.id,c.text,u.username,u.verified,c.user_id,c.edited_at,c.deleted FROM comments c JOIN users u ON u.id=c.user_id WHERE c.post_id=$1 AND c.deleted=0 ORDER BY c.id DESC LIMIT 20', [p.id]);
+    const comments = await all('SELECT c.id,c.text,u.username,u.verified,u.verified_color,c.user_id,c.edited_at,c.deleted FROM comments c JOIN users u ON u.id=c.user_id WHERE c.post_id=$1 AND c.deleted=0 ORDER BY c.id DESC LIMIT 20', [p.id]);
     out.push({
       ...p, liked: !!p.liked,
       tags: tags.map((x) => x.username),
@@ -428,7 +428,7 @@ const getPost = async (id, me) => {
 };
 
 const storyGroupFor = async (me, u) => {
-  const base = { uid: u.id, username: u.username, avatar: u.avatar, verified: u.verified, items: [], count: 0, seen: false };
+  const base = { uid: u.id, username: u.username, avatar: u.avatar, verified: u.verified, verified_color: u.verified_color, items: [], count: 0, seen: false };
   if (!await canSee(me, u)) return base;
 
   const items = await all(`SELECT s.id,s.media,s.type,s.created,s.mentions,
@@ -477,7 +477,7 @@ const notify = async (to, actor, type, post_id = null, text = '') => {
 // ---------- Busca ----------
 app.get('/api/search', auth, async (req, res) => {
   const q = '%' + (req.query.q || '').toLowerCase() + '%';
-  const rows = await all('SELECT id,username,name,avatar,verified FROM users WHERE LOWER(username) LIKE $1 OR LOWER(name) LIKE $1 LIMIT 20', [q]);
+  const rows = await all('SELECT id,username,name,avatar,verified,verified_color FROM users WHERE LOWER(username) LIKE $1 OR LOWER(name) LIKE $1 LIMIT 20', [q]);
   res.json(rows);
 });
 
@@ -736,7 +736,7 @@ app.delete('/api/comments/:id', auth, async (req, res) => {
 app.get('/api/chats', auth, async (req, res) => {
   const me = req.user.id;
   const rows = await all(`
-    SELECT u.id,u.username,u.avatar,u.verified,
+    SELECT u.id,u.username,u.avatar,u.verified,u.verified_color,
       lm.created AS last, lm.text AS last_text, lm.type AS last_type, lm.from_id AS last_from,
       COALESCE(rd.unread,0) AS unread,
       (u.id IN (SELECT peer_id FROM pinned_chats WHERE user_id=$1)) AS pinned
@@ -787,6 +787,31 @@ app.get('/api/messages/:id', auth, async (req, res) => {
   res.json(mapped);
 });
 
+// ---------- Notificações ----------
+app.get('/api/notifs', auth, async (req, res) => {
+  const me = req.user.id;
+  const rows = await all(`SELECT n.id,n.type,n.post_id,n.created,n.seen,n.text,u.id uid,u.username,u.avatar,u.verified,u.verified_color,
+    p.media p_media,p.type p_type,
+    s.media s_media,s.type s_type
+    FROM notifs n JOIN users u ON u.id=n.actor_id
+    LEFT JOIN posts p ON p.id=n.post_id AND n.type NOT IN ('story_reply','story_view')
+    LEFT JOIN stories s ON s.id=n.post_id AND n.type IN ('story_reply','story_view')
+    WHERE n.user_id=$1 ORDER BY n.created DESC LIMIT 60`, [me]);
+  const out = [];
+  for (const r of rows) {
+    if (r.type === 'request') {
+      const f = await get('SELECT status FROM follows WHERE follower=$1 AND followee=$2', [r.uid, me]);
+      if (!f || f.status !== 'pending') r.type = 'follow';
+    }
+    if (r.type === 'story_reply') { r.media = r.s_media; r.ptype = r.s_type; }
+    else { r.media = r.p_media; r.ptype = r.p_type; }
+    out.push({ ...r, rel: (r.type === 'follow' || r.type === 'request') ? await rel(me, r.uid) : null });
+  }
+  res.json(out);
+});
+app.get('/api/notifs/count', auth, async (req, res) => res.json({ n: await num('SELECT COUNT(*) n FROM notifs WHERE user_id=$1 AND seen=0', [req.user.id]) }));
+app.post('/api/notifs/read', auth, async (req, res) => { await run('UPDATE notifs SET seen=1 WHERE user_id=$1', [req.user.id]); res.json({ ok: true }); });
+
 // ---------- Stories ----------
 app.post('/api/stories', auth, up.single('media'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'Escolha uma foto ou vídeo.' });
@@ -812,7 +837,7 @@ app.get('/api/stories', auth, async (req, res) => {
   const me = req.user.id;
   const now = Date.now();
   const rows = await all(`
-    SELECT s.id,s.media,s.type,s.created,s.mentions,u.id uid,u.username,u.avatar,
+    SELECT s.id,s.media,s.type,s.created,s.mentions,u.id uid,u.username,u.avatar,u.verified,u.verified_color,
       COALESCE(s.expires_at, s.created + 864e5) AS expires_at,
       (SELECT COUNT(DISTINCT v.viewer_id) FROM story_views v WHERE v.story_id=s.id AND v.viewer_id<>s.user_id) AS views
     FROM stories s JOIN users u ON u.id=s.user_id
@@ -903,7 +928,7 @@ app.post('/api/stories/:id/comment', auth, async (req, res) => {
 
 app.get('/api/stories/:id/reactions', auth, async (req, res) => {
   const id = +req.params.id;
-  const rows = await all('SELECT r.id,r.type,r.text,r.created,u.id uid,u.username,u.avatar,u.verified FROM story_reactions r JOIN users u ON u.id=r.user_id WHERE r.story_id=$1 ORDER BY r.created', [id]);
+  const rows = await all('SELECT r.id,r.type,r.text,r.created,u.id uid,u.username,u.avatar,u.verified,u.verified_color FROM story_reactions r JOIN users u ON u.id=r.user_id WHERE r.story_id=$1 ORDER BY r.created', [id]);
   res.json(rows);
 });
 
@@ -931,7 +956,7 @@ app.get('/api/stories/:id/views', auth, async (req, res) => {
   if (st.user_id !== me) return res.status(403).json({ error: 'Só o dono do story vê quem visualizou.' });
 
   const count = await num('SELECT COUNT(DISTINCT viewer_id) AS n FROM story_views WHERE story_id=$1 AND viewer_id<>$2', [id, st.user_id]);
-  const viewers = await all('SELECT v.viewer_id,v.viewed_at,u.id uid,u.username,u.avatar,u.verified FROM story_views v JOIN users u ON u.id=v.viewer_id WHERE v.story_id=$1 AND v.viewer_id<>$2 ORDER BY v.viewed_at DESC', [id, st.user_id]);
+  const viewers = await all('SELECT v.viewer_id,v.viewed_at,u.id uid,u.username,u.avatar,u.verified,u.verified_color FROM story_views v JOIN users u ON u.id=v.viewer_id WHERE v.story_id=$1 AND v.viewer_id<>$2 ORDER BY v.viewed_at DESC', [id, st.user_id]);
   res.json({ count, viewers });
 });
 // ---------- Bloquear / desbloquear ----------
