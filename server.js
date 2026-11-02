@@ -21,7 +21,8 @@ CREATE TABLE IF NOT EXISTS users(id INTEGER PRIMARY KEY, username TEXT UNIQUE NO
   verified_color TEXT DEFAULT '',
   song_title TEXT DEFAULT '', song_artist TEXT DEFAULT '', song_url TEXT DEFAULT '', song_art TEXT DEFAULT '',
   song_start INTEGER DEFAULT 0, song_dur INTEGER DEFAULT 0,
-  username_change_count INTEGER DEFAULT 0, last_username_change INTEGER DEFAULT 0);
+  username_change_count INTEGER DEFAULT 0, last_username_change INTEGER DEFAULT 0,
+  deactivated INTEGER DEFAULT 0);
 CREATE TABLE IF NOT EXISTS follows(follower INTEGER, followee INTEGER, status TEXT, PRIMARY KEY(follower, followee));
 CREATE TABLE IF NOT EXISTS blocked_users(blocker INTEGER, blocked INTEGER, PRIMARY KEY(blocker, blocked));
 CREATE TABLE IF NOT EXISTS pinned_chats(user_id INTEGER, peer_id INTEGER, pinned_at INTEGER NOT NULL, PRIMARY KEY(user_id, peer_id));
@@ -49,6 +50,7 @@ addCol('users', 'last_username_change', 'INTEGER DEFAULT 0');
 addCol('users', 'verified_color', "TEXT DEFAULT ''");
 addCol('users', 'song_start', 'INTEGER DEFAULT 0');
 addCol('users', 'song_dur', 'INTEGER DEFAULT 0');
+addCol('users', 'deactivated', 'INTEGER DEFAULT 0');
 addCol('posts', 'song_preview', "TEXT DEFAULT ''");
 addCol('posts', 'song_duration', 'INTEGER DEFAULT 0');
 addCol('posts', 'deleted', 'INTEGER DEFAULT 0');
@@ -136,7 +138,13 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 const sign = (u) => jwt.sign({ id: u.id, username: u.username }, SECRET, { expiresIn: '30d' });
 const auth = (req, res, next) => {
-  try { req.user = jwt.verify((req.headers.authorization || '').replace('Bearer ', ''), SECRET); next(); }
+  try {
+    req.user = jwt.verify((req.headers.authorization || '').replace('Bearer ', ''), SECRET);
+    const acc = Q('SELECT deactivated FROM users WHERE id=?').get(req.user.id);
+    if (!acc) return res.status(401).json({ error: 'Sessão expirada.' });
+    if (acc.deactivated) return res.status(401).json({ error: 'Esta conta está desativada. Entre novamente para reativá-la.' });
+    next();
+  }
   catch { res.status(401).json({ error: 'Faça login para continuar.' }); }
 };
 
@@ -160,6 +168,21 @@ const fin = (rows) => rows.map((p) => ({
   comments: Q('SELECT c.id,c.text,u.username,u.verified,c.user_id,c.edited_at,c.deleted FROM comments c JOIN users u ON u.id=c.user_id WHERE c.post_id=? AND c.deleted=0 ORDER BY c.id DESC LIMIT 20').all(p.id).reverse(),
 }));
 const getPost = (id, me) => fin(Q(POST + ' AND p.id=?').all(me, id))[0] || null;
+// Grupo de stories ativos de um usuário (usado no perfil e no indicador de story)
+const storyGroupFor = (me, u) => {
+  const base = { uid: u.id, username: u.username, avatar: u.avatar, verified: u.verified, items: [], count: 0, seen: false };
+  if (!canSee(me, u)) return base;
+  const items = Q(`SELECT s.id,s.media,s.type,s.created,s.mentions,
+    COALESCE(s.expires_at,s.created+864e5) AS expires_at,
+    (SELECT COUNT(DISTINCT v.viewer_id) FROM story_views v WHERE v.story_id=s.id AND v.viewer_id<>s.user_id) AS views
+    FROM stories s WHERE s.user_id=? AND s.created>? ORDER BY s.created`).all(u.id, Date.now() - 864e5);
+  if (!items.length) return base;
+  const seen = new Set(Q('SELECT story_id FROM story_views WHERE viewer_id=?').all(me).map((r) => r.story_id));
+  items.forEach((i) => { i.seen = seen.has(i.id); });
+  // O próprio usuário sempre vê o indicador ativo; para terceiros só fica "visto" se viu todos.
+  const allSeen = u.id !== me && items.every((i) => i.seen);
+  return { ...base, items, count: items.length, seen: allSeen };
+};
 const parseTags = (raw, caption, me) => {
   const names = new Set();
   String(raw || '').split(/[\s,]+/).forEach((x) => { x = x.replace(/^@/, '').toLowerCase(); if (/^[a-zA-Z0-9_]{3,20}$/.test(x)) names.add(x); });
@@ -192,6 +215,8 @@ app.post('/api/login', (req, res) => {
   const { username, password } = req.body || {};
   const u = Q('SELECT * FROM users WHERE username=?').get((username || '').toLowerCase());
   if (!u || !bcrypt.compareSync(password || '', u.password)) return res.status(401).json({ error: 'Usuário ou senha incorretos.' });
+  // Ao entrar novamente, uma conta desativada volta a ficar ativa.
+  if (u.deactivated) Q('UPDATE users SET deactivated=0 WHERE id=?').run(u.id);
   res.json({ token: sign(u) });
 });
 app.get('/api/me', auth, (req, res) => {
@@ -231,6 +256,7 @@ app.get('/api/u/:name', auth, (req, res) => {
   const u = userById(row.id), me = req.user.id, ok = canSee(me, u);
   res.json({
     user: u, rel: rel(me, u.id), canSee: ok,
+    story: storyGroupFor(me, u),
     count: {
       posts: num('SELECT COUNT(*) n FROM posts WHERE user_id=? AND repost_of IS NULL', u.id),
       followers: num("SELECT COUNT(*) n FROM follows WHERE followee=? AND status='ok'", u.id),
@@ -389,7 +415,16 @@ app.get('/api/stories', auth, (req, res) => {
   rows.forEach((r) => { r.seen = seen.has(r.id); r.expired = r.expires_at < now; if (r.uid !== me) delete r.views; });
   const g = {};
   rows.forEach((r) => { (g[r.uid] = g[r.uid] || { uid: r.uid, username: r.username, avatar: r.avatar, items: [] }).items.push(r); });
-  res.json(Object.values(g).sort((a, b) => (b.uid === me) - (a.uid === me)));
+  // Agrupa e calcula o estado do anel. Sem isso, o story voltava a aparecer como novo ao recarregar.
+  const groups = Object.values(g).map((x) => ({ ...x, seen: x.uid !== me && x.items.every((i) => i.seen) }));
+  res.json(groups.sort((a, b) => (b.uid === me) - (a.uid === me)));
+});
+app.get('/api/stories/user/:name', auth, (req, res) => {
+  const row = Q('SELECT id FROM users WHERE LOWER(username)=?').get(String(req.params.name || '').toLowerCase());
+  if (!row) return res.status(404).json({ error: 'Perfil não encontrado.' });
+  const u = userById(row.id);
+  if (!u) return res.status(404).json({ error: 'Perfil não encontrado.' });
+  res.json(storyGroupFor(req.user.id, u));
 });
 
 // ---------- Mensagens ----------
@@ -428,7 +463,7 @@ app.get('/api/messages/:id', auth, (req, res) => {
   res.json(rows.map((m) => ({ ...m, post: m.post_id ? getPost(m.post_id, me) : null })));
 });
 
-app.use((e, req, res, next) => res.status(400).json({ error: e.code === 'LIMIT_FILE_SIZE' ? 'Arquivo muito grande (máx. 60 MB).' : 'Erro no envio.' }));
+// Erros de upload/API são tratados no final do arquivo (depois de todas as rotas).
 
 io.use((s, next) => {
   try { s.user = jwt.verify(s.handshake.auth.token, SECRET); next(); } catch { next(new Error('não autorizado')); }
@@ -605,6 +640,61 @@ app.post('/api/username/change', auth, (req, res) => {
   } catch { res.status(409).json({ error: 'Esse nome de usuário já existe.' }); }
 });
 
+// ---- Desativar / Excluir conta ----
+app.post('/api/account/deactivate', auth, (req, res) => {
+  const me = req.user.id;
+  const u = Q('SELECT password FROM users WHERE id=?').get(me);
+  if (!u || !bcrypt.compareSync((req.body || {}).password || '', u.password)) {
+    return res.status(403).json({ error: 'Senha incorreta.' });
+  }
+  Q('UPDATE users SET deactivated=1 WHERE id=?').run(me);
+  res.json({ ok: true });
+});
+app.delete('/api/account/delete', auth, (req, res) => {
+  const me = req.user.id;
+  const u = Q('SELECT password FROM users WHERE id=?').get(me);
+  if (!u || !bcrypt.compareSync((req.body || {}).password || '', u.password)) {
+    return res.status(403).json({ error: 'Senha incorreta.' });
+  }
+  const meRow = Q('SELECT avatar AS media FROM users WHERE id=?').get(me) || {};
+  const files = [
+    meRow,
+    ...Q('SELECT media FROM posts WHERE user_id=?').all(me),
+    ...Q('SELECT media FROM stories WHERE user_id=?').all(me),
+    ...Q('SELECT media FROM messages WHERE (from_id=? OR to_id=?) AND media<>\'\'').all(me, me),
+  ].map((r) => r.media).filter(Boolean);
+  try {
+    db.exec('BEGIN');
+    Q('DELETE FROM comments WHERE user_id=? OR post_id IN (SELECT id FROM posts WHERE user_id=?)').run(me, me);
+    Q('DELETE FROM likes WHERE user_id=? OR post_id IN (SELECT id FROM posts WHERE user_id=?)').run(me, me);
+    Q('DELETE FROM tags WHERE user_id=? OR post_id IN (SELECT id FROM posts WHERE user_id=?)').run(me, me);
+    Q('DELETE FROM notifs WHERE user_id=? OR actor_id=?').run(me, me);
+    Q('DELETE FROM story_views WHERE viewer_id=? OR story_id IN (SELECT id FROM stories WHERE user_id=?)').run(me, me);
+    Q('DELETE FROM story_reactions WHERE user_id=? OR story_id IN (SELECT id FROM stories WHERE user_id=?)').run(me, me);
+    Q('DELETE FROM stories WHERE user_id=?').run(me);
+    Q('DELETE FROM posts WHERE user_id=?').run(me);
+    Q('DELETE FROM messages WHERE from_id=? OR to_id=?').run(me, me);
+    Q('DELETE FROM follows WHERE follower=? OR followee=?').run(me, me);
+    Q('DELETE FROM blocked_users WHERE blocker=? OR blocked=?').run(me, me);
+    Q('DELETE FROM pinned_chats WHERE user_id=? OR peer_id=?').run(me, me);
+    Q('DELETE FROM chat_reads WHERE user_id=? OR peer_id=?').run(me, me);
+    Q('DELETE FROM users WHERE id=?').run(me);
+    db.exec('COMMIT');
+  } catch (e) {
+    try { db.exec('ROLLBACK'); } catch {}
+    return res.status(500).json({ error: 'Não foi possível excluir a conta.' });
+  }
+  files.forEach((f) => {
+    try {
+      const stillUsed = Q('SELECT 1 FROM posts WHERE media=? UNION SELECT 1 FROM stories WHERE media=? UNION SELECT 1 FROM messages WHERE media=? UNION SELECT 1 FROM users WHERE avatar=?').get(f, f, f, f);
+      if (stillUsed) return;
+      const fp = path.join(__dirname, f);
+      if (fp.startsWith(path.join(__dirname, 'uploads')) && fs.existsSync(fp)) fs.unlinkSync(fp);
+    } catch {}
+  });
+  res.json({ ok: true });
+});
+
 // ---- Enviar mídia/áudio na DM ----
 app.post('/api/dm/media', auth, up.single('media'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'Escolha uma imagem, vídeo ou arquivo de áudio.' });
@@ -668,5 +758,13 @@ app.post('/api/posts/:id/pin', auth, (req, res) => {
 
 // ---- Links na bio (salvar no campo bio com detecção automática de URL) ----
 // O campo bio já existe; links são detectados e convertidos no frontend.
+
+// Qualquer rota /api inexistente responde JSON (nunca HTML), evitando o erro "Unexpected token '<'".
+app.use('/api', (req, res) => res.status(404).json({ error: 'Recurso não encontrado.' }));
+// Tratador de erros de upload/API no final, cobrindo todas as rotas (inclusive as declaradas acima).
+app.use((e, req, res, next) => {
+  if (res.headersSent) return next(e);
+  res.status(400).json({ error: e && e.code === 'LIMIT_FILE_SIZE' ? 'Arquivo muito grande (máx. 60 MB).' : 'Erro no envio. Tente novamente.' });
+});
 
 server.listen(PORT, () => console.log(`ANARCHY rodando em http://localhost:${PORT}`));

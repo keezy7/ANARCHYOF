@@ -23,6 +23,7 @@ textarea{resize:vertical;min-height:70px;margin:.5rem 0}
 .gh{background:var(--soft)}.gh:hover{background:var(--soft2)}
 .lnk{color:var(--link);font-weight:700;font-size:.85rem}.lnk:hover{color:#fff}.lnk.off{color:var(--mute)}
 .hide{display:none!important}small{color:var(--mute)}.err{color:#ff5c6a;min-height:1.2em}
+.ulink{color:inherit;cursor:pointer;text-decoration:none;font-weight:inherit}.ulink:hover{color:var(--link)}
 .empty{color:var(--mute);text-align:center;padding:2rem 0}
 .row{display:flex;gap:.5rem;align-items:center}
 .av{border-radius:50%;object-fit:cover;background:var(--soft);display:inline-grid;place-items:center;font-weight:700;flex:none}
@@ -175,6 +176,8 @@ main{margin-left:72px}
 .pbt{display:flex;gap:.5rem;margin:1.4rem 0 0}.pbt button{flex:1;padding:.7rem;border-radius:10px}
 .hl{display:flex;gap:1.4rem;padding:1.6rem 1rem 1.2rem}.hl button{display:grid;justify-items:center;gap:.4rem;font-weight:600;font-size:.8rem}
 .hl .nw{width:86px;height:86px;border-radius:50%;border:2px solid var(--line);background:var(--soft);display:grid;place-items:center;color:var(--mute);transition:transform .2s var(--ease),border-color .2s}.hl button:hover .nw{transform:scale(1.06);border-color:var(--mute)}
+.pav{position:relative;flex:none}.pavring{padding:4px;border-radius:50%;background:var(--g);display:grid;cursor:pointer;transition:transform .2s var(--ease)}.pavring:hover{transform:scale(1.03)}.pavring.seen{background:#5a606c}.pavring .av{border:4px solid var(--bg)}
+.hlthumb{width:86px;height:86px;border-radius:50%;overflow:hidden;background:#000;display:grid;place-items:center}.hlthumb img,.hlthumb video{width:100%;height:100%;object-fit:cover;display:block}.hl .ring .hlthumb{border:3px solid var(--bg)}.hl .ring{cursor:pointer}
 .tabs{position:relative;display:flex;justify-content:center;border-top:1px solid var(--line);margin-top:.6rem}
 .tab{display:flex;align-items:center;gap:.5rem;padding:1rem 1.6rem;color:var(--mute);font-weight:700;font-size:.74rem;letter-spacing:.09em;text-transform:uppercase}
 .tab:hover{color:var(--ink)}.tab.on{color:var(--ink)}
@@ -237,6 +240,15 @@ main{margin-left:72px}
 @media(max-width:760px){.pdet{grid-template-columns:1fr;height:auto;max-height:88vh;overflow:auto}.pdm{max-height:50vh}.pdc{max-height:30vh}}
 .ov.dark{background:#000;backdrop-filter:none}
 #cropperOverlay{position:fixed;inset:0;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;z-index:1000}
+#pcOverlay{position:fixed;inset:0;background:rgba(0,0,0,.88);display:flex;align-items:center;justify-content:center;z-index:1200;padding:1rem}
+.pcbox{background:var(--soft);border-radius:16px;padding:1rem;max-width:min(94vw,460px);max-height:94vh;overflow:auto;display:flex;flex-direction:column;align-items:center;gap:.7rem}
+.pcview{position:relative;overflow:hidden;border-radius:10px;background:#000;touch-action:none;cursor:grab;flex:none;box-shadow:0 0 0 2px var(--line)}
+.pcview.pcdrag{cursor:grabbing}.pcview img{position:absolute;max-width:none;max-height:none;user-select:none;pointer-events:none}
+.pcview:after{content:"";position:absolute;inset:0;border:1px solid rgba(255,255,255,.55);border-radius:10px;pointer-events:none;box-shadow:inset 0 0 0 9999px rgba(0,0,0,.16)}
+.pcratios{display:flex;gap:.4rem;flex-wrap:wrap;justify-content:center}.pcratios button{border:1px solid var(--line);border-radius:8px;padding:.35rem .65rem;font-size:.8rem;font-weight:700}.pcratios button.on{background:var(--blue);border-color:var(--blue);color:#fff}
+.pczoom{width:100%;display:flex;align-items:center;gap:.5rem}.pczoom input{flex:1;padding:0;border:0;background:none;box-shadow:none;accent-color:var(--blue)}
+.pvp{position:relative;width:100%;display:grid;place-items:center}.pvcrop{position:absolute;bottom:.6rem;right:.6rem;display:flex;gap:.4rem;z-index:2}.pvcrop button{background:rgba(0,0,0,.72);color:#fff;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:.4rem .75rem;font-weight:700;font-size:.8rem;backdrop-filter:blur(4px)}.pvcrop button:hover{background:rgba(0,0,0,.9)}
+.pcnote{font-size:.75rem;color:var(--mute);text-align:center}
 .sbox{position:relative;width:min(400px,100%);height:min(88vh,720px);background:#111;border-radius:12px;overflow:hidden;display:grid;place-items:center}
 .sbox.first{animation:zoomIn .4s var(--ease)}
 @keyframes sInR{from{opacity:0;transform:translateX(105%) scale(.88)}to{opacity:1;transform:none}}@keyframes sInL{from{opacity:0;transform:translateX(-105%) scale(.88)}to{opacity:1;transform:none}}
@@ -316,6 +328,8 @@ main{margin-left:72px}
 let token = localStorage.token, me, sock, peer = null, pendingPeer = null, view = 'home', G = [], SR = [], song = {}, au, stRaf = 0, stClock = null, stGi = null, stSid = null, sT;
 let panel = null, nfAll = [], nfFilter = 'all', unread = 0, muted = true, curTab = 'feed', lastProf = null, PD = {}, JL = null;
 let chatUsers = [], chatLoadId = 0, VCLR = {}, segAu = null;
+let PM = { file: null, orig: null, recrop: false };
+const PC = { img: null, url: '', ratioKey: 'orig', ratio: 1, x: 0, y: 0, zoom: 1 };
 const dmSrc = new Map(), dmAudios = new Map();
 const P = {};
 const $ = (id) => document.getElementById(id);
@@ -337,6 +351,8 @@ const vf = (v, username) => {
 const av = (u, s = 32) => (u && u.avatar
   ? `<img class="av" style="width:${s}px;height:${s}px" src="${u.avatar}" alt="">`
   : `<span class="av" style="width:${s}px;height:${s}px;font-size:${s / 2.2}px">${esc(((u && u.username) || '?')[0].toUpperCase())}</span>`);
+// Link de perfil reutilizável: clicar no username abre o perfil sem disparar o clique do card/linha.
+const ul = (name, content) => `<a class="ulink" onclick="event.preventDefault();event.stopPropagation();go('profile','${esc(name)}')">${content}</a>`;
 const toast = (t) => { const d = document.createElement('div'); d.className = 'toast'; d.textContent = t; document.body.appendChild(d); setTimeout(() => d.remove(), 2200); };
 const EMOJIS = ['😀','😃','😄','😁','😆','😅','🤣','😂','🙂','🙃','😉','😊','🥰','😍','🤩','😘','😗','😚','😋','😛','😜','🤪','😝','🤗','🤭','🤫','🤔','😐','😑','😶','🙄','😏','😒','🙁','😔','😟','😕','🙁','☹️','😣','😖','😫','😩','😢','😭','😤','😠','😡','🤬','🤯','😳','😱','😨','😰','😥','😓','🤗','😋','😜','😝','🤪','🤨','🧐','🤓','😎','🥳','😏','😒','🙄','😬','😥','😓','😔','😕','🙁','☹️','😣','😖','😫','😩','😢','😭','😤','😠','😡','🤬','🤯','😳','😱','😨','😰','😥','😓','😭','😂','🤣','😊','😍','😘','🥰','😎','🤩','🥳','😉','🙂','🤗','🤭','🤫','🤔','😐','😑','😶','😏','😒','🙄','😬','🤨','🧐','🤓','😎','🥳'];
 function openEmojiPicker(insertIntoId) {
@@ -396,7 +412,17 @@ const media = (p, full) => (p.type === 'video'
 async function api(url, o = {}) {
   o.headers = { ...(o.headers || {}), Authorization: 'Bearer ' + token };
   if (o.json) { o.body = JSON.stringify(o.json); o.headers['Content-Type'] = 'application/json'; o.method = o.method || 'POST'; }
-  const r = await fetch(url, o), d = await r.json();
+  const r = await fetch(url, o);
+  const raw = await r.text();
+  let d = {};
+  if (raw) {
+    try { d = JSON.parse(raw); }
+    catch {
+      // Servidores/rotas que devolvem HTML (ex.: página 404) não podem quebrar o app com "Unexpected token '<'".
+      if (r.status === 404) throw new Error('Recurso não encontrado no servidor.');
+      throw new Error(r.ok ? 'Resposta inválida do servidor.' : 'O servidor não conseguiu concluir a ação.');
+    }
+  }
   if (r.status === 401 && token) logout();
   if (!r.ok) throw new Error(d.error || 'Algo deu errado.');
   return d;
@@ -610,7 +636,7 @@ function renderNotifs(anim) {
       const storyPrev = n.media ? (n.ptype === 'video' ? `<video class="sp" src="${n.media}#t=0.1" muted preload="metadata"></video>` : `<img class="sp" src="${n.media}" alt="">`) : '';
       const bubble = n.type === 'story_reply' && n.text ? `<div class="sb"><div class="st">${esc(n.text)}</div></div>` : '';
       return `<div class="nt ${n.seen ? '' : 'new'}" style="--i:${i++};${anim ? 'animation:rise .4s var(--ease) both;animation-delay:' + Math.min(i, 12) * 40 + 'ms' : ''}" onclick="${click}">${av(n, 44)}
-        <div class="tx"><b>${esc(n.username)}</b>${vf(n.verified,n.username)} ${NT[n.type] || ''} <small>${rt(n.created)}</small>
+        <div class="tx">${ul(n.username, `<b>${esc(n.username)}</b>`)}${vf(n.verified,n.username)} ${NT[n.type] || ''} <small>${rt(n.created)}</small>
         ${bubble ? `<div class="sw">${storyPrev}${bubble}</div>` : ''}</div>${act}</div>`;
     }).join('');
   });
@@ -839,7 +865,7 @@ const tagsLine = (p) => (p.tags && p.tags.length ? `<p class="tg"><small>com</sm
 const cmts = (p, full) => {
   const list = full ? p.comments : p.comments.slice(-2);
   return (!full && p.ncomments > 2 ? `<span class="more" onclick="openPost(${p.id})">Ver todos os ${p.ncomments} comentários</span>` : '')
-    + list.map((c) => `<p data-cid="${c.id}"><b>${esc(c.username)}</b>${vf(c.verified,c.username)} <span class="ct">${linkify(esc(c.text))}</span>${c.edited_at ? ' <small class="ed" style="color:var(--mute)">editado</small>' : ''}
+    + list.map((c) => `<p data-cid="${c.id}">${ul(c.username, `<b>${esc(c.username)}</b>`)}${vf(c.verified,c.username)} <span class="ct">${linkify(esc(c.text))}</span>${c.edited_at ? ' <small class="ed" style="color:var(--mute)">editado</small>' : ''}
       ${c.user_id === me.id ? `<button class="gh" onclick="editComment(${p.id},${c.id},this)" style="font-size:.7rem;padding:.15rem .5rem;border-radius:6px;margin-left:.4rem">Editar</button><button class="gh" onclick="deleteComment(${p.id},${c.id})" style="font-size:.7rem;padding:.15rem .5rem;border-radius:6px;margin-left:.3rem">Excluir</button>` : ''}</p>`).join('');
 };
 function postCard(p, i = 0) {
@@ -847,13 +873,13 @@ function postCard(p, i = 0) {
   return `<article class="post" id="p${p.id}" style="--i:${i}">
   <div class="ph"><a onclick="go('profile','${p.username}')">${av(p, 36)}</a>
     <div class="who"><b onclick="go('profile','${p.username}')">${esc(p.username)}</b>${vf(p.verified,p.username)}<small> • ${rt(p.created)}</small>
-    ${p.orig ? `<div class="ro">↻ republicado de @${esc(p.orig)}</div>` : ''}</div>
+    ${p.orig ? `<div class="ro">↻ republicado de ${ul(p.orig, '@' + esc(p.orig))}</div>` : ''}</div>
     <button class="mo" onclick="postMenu(${p.id})" aria-label="Mais">${I('dots', 22)}</button></div>
   <div class="pm" ondblclick="dbl(${p.id},this)">${media(p)}</div>
   <div class="pa" data-pa="${p.id}">${acts(p)}</div>
   <div class="pb"><div class="pl" data-pl="${p.id}">${likesTxt(p)}</div>
     ${tagsLine(p)}
-    ${p.caption ? `<p><b>${esc(p.username)}</b> ${linkify(esc(p.caption))}</p>` : ''}
+    ${p.caption ? `<p>${ul(p.username, `<b>${esc(p.username)}</b>`)} ${linkify(esc(p.caption))}</p>` : ''}
     ${p.song_preview ? `<div class="song" style="margin:.4rem 0"><button onclick="au&&au.src==='${esc(p.song_preview)}'&&!au.paused?au.pause():playSongPost('${esc(p.song_preview)}',${p.id})" aria-label="Tocar prévia">▶</button><input type="range" min="0" max="${p.song_duration || 30}" value="0" style="width:110px;margin-left:.4rem"><small style="color:var(--mute)">Prévia da música</small></div>` : ''}
     <div data-cl="${p.id}">${cmts(p)}</div>
     <input placeholder="Adicione um comentário..." maxlength="300" onkeydown="if(event.key==='Enter')cmt(${p.id},this)"><button type="button" onclick="openEmojiPicker('cmt-${p.id}')" title="Emoji">${I('smile', 16)}</button></div></article>`;
@@ -863,7 +889,7 @@ function postDetail(p) {
   const fullscreenBtn = p.type === 'video' ? `<button class="ib" onclick="toggleFullscreenVideo()" aria-label="Tela cheia">${I('expand', 20)}</button>` : '';
   return `<div class="pdet"><div class="pdm">${media(p, true)}</div><div class="pdr">
     <div class="pdh">${av(p, 34)}<b onclick="go('profile','${p.username}')">${esc(p.username)}${vf(p.verified,p.username)}</b>${fullscreenBtn}<button class="ib" onclick="postMenu(${p.id})" aria-label="Mais opções" style="margin-left:auto">${I('dots', 20)}</button><button class="ib" onclick="closeM()" aria-label="Fechar">${I('x', 20)}</button></div>
-    <div class="pdc">${p.caption ? `<p><b>${esc(p.username)}</b> ${linkify(esc(p.caption))}</p>` : ''}${tagsLine(p)}
+    <div class="pdc">${p.caption ? `<p>${ul(p.username, `<b>${esc(p.username)}</b>`)} ${linkify(esc(p.caption))}</p>` : ''}${tagsLine(p)}
     ${p.song_preview ? `<div class="song" style="margin:.4rem 0"><button onclick="playSongPost('${esc(p.song_preview)}',${p.id})" aria-label="Tocar prévia">▶</button><input type="range" min="0" max="${p.song_duration || 30}" value="0" style="width:110px;margin-left:.4rem"><small style="color:var(--mute)">Prévia da música</small></div>` : ''}
     <div data-cl="${p.id}" data-full="1">${cmts(p, true) || '<small>Sem comentários ainda.</small>'}</div></div>
     <div class="pa" data-pa="${p.id}">${acts(p)}</div><div class="pl" data-pl="${p.id}">${likesTxt(p)} · <small>${rt(p.created)}</small></div>
@@ -893,7 +919,7 @@ function postMenu(id) {
 }
 async function share(id) {
   const us = await api('/api/chats');
-  modal(`<h3>Enviar para</h3>${us.map((u) => `<div class="rq">${av(u, 40)}<span>${esc(u.username)}</span><button class="bl" onclick="sendPost(${u.id},${id},this)">Enviar</button></div>`).join('') || '<p class="empty">Siga alguém para poder enviar posts.</p>'}`);
+  modal(`<h3>Enviar para</h3>${us.map((u) => `<div class="rq">${av(u, 40)}<span>${ul(u.username, esc(u.username))}</span><button class="bl" onclick="sendPost(${u.id},${id},this)">Enviar</button></div>`).join('') || '<p class="empty">Siga alguém para poder enviar posts.</p>'}`);
 }
 function sendPost(to, id, b) { sock.emit('msg', { to, post_id: id }); b.textContent = 'Enviado ✓'; b.disabled = true; }
 
@@ -937,6 +963,7 @@ function toggleMute(k) {
 
 /* ---------- Criar ---------- */
 function newPost(mode) {
+  PM = { file: null, orig: null, recrop: false };
   modal(`<h3>${mode === 'story' ? 'Novo story' : 'Criar publicação'}</h3>
   <label class="drop" for="nf" id="pv">${I('camera', 44)}<p>Clique para escolher uma foto ou vídeo</p></label>
   <input type="file" id="nf" class="hide" accept="image/*,video/*" onchange="prev(this)">
@@ -946,11 +973,128 @@ function newPost(mode) {
 }
 function prev(i) {
   const f = i.files[0]; if (!f) return;
-  const u = URL.createObjectURL(f);
-  $('pv').innerHTML = f.type.startsWith('video') ? `<video src="${u}" muted autoplay loop playsinline></video>` : `<img src="${u}" alt="">`;
+  PM = { file: f, orig: f, recrop: false };
+  renderPostPreview();
+}
+function renderPostPreview() {
+  const box = $('pv'); if (!box || !PM.file) return;
+  const f = PM.file, u = URL.createObjectURL(f);
+  if (f.type.startsWith('video')) {
+    box.innerHTML = `<video src="${u}" muted autoplay loop playsinline></video>`;
+    return;
+  }
+  box.innerHTML = `<div class="pvp"><img src="${u}" alt=""><div class="pvcrop"><button type="button" onclick="event.preventDefault();event.stopPropagation();openPostCropper()">Recortar</button>${PM.recrop ? `<button type="button" onclick="event.preventDefault();event.stopPropagation();resetPostCrop()">Desfazer</button>` : ''}</div></div>`;
+}
+function resetPostCrop() {
+  PM.file = PM.orig; PM.recrop = false; renderPostPreview(); toast('Recorte desfeito');
+}
+/* ---------- Cropper de mídia do post/story ---------- */
+function pcRatio() {
+  if (!PC.img) return 1;
+  if (PC.ratioKey === 'orig') return PC.img.width / PC.img.height;
+  return PC.ratioKey;
+}
+function pcViewport() {
+  const ratio = pcRatio();
+  let W = 320, H = W / ratio;
+  if (H > 420) { H = 420; W = H * ratio; }
+  if (W > 420) { W = 420; H = W / ratio; }
+  return { W: Math.max(90, Math.round(W)), H: Math.max(90, Math.round(H)) };
+}
+function pcClamp() {
+  if (!PC.img) return;
+  const { W, H } = pcViewport();
+  const s = Math.max(W / PC.img.width, H / PC.img.height) * PC.zoom;
+  const dw = PC.img.width * s, dh = PC.img.height * s;
+  const mx = Math.max(0, (dw - W) / 2), my = Math.max(0, (dh - H) / 2);
+  PC.x = Math.max(-mx, Math.min(mx, PC.x));
+  PC.y = Math.max(-my, Math.min(my, PC.y));
+}
+function pcPaint() {
+  const img = $('pcImg'), view = $('pcView'); if (!img || !PC.img) return;
+  pcClamp();
+  const { W, H } = pcViewport();
+  const s = Math.max(W / PC.img.width, H / PC.img.height) * PC.zoom;
+  const dw = PC.img.width * s, dh = PC.img.height * s;
+  img.style.width = dw + 'px'; img.style.height = dh + 'px';
+  img.style.left = ((W - dw) / 2 + PC.x) + 'px';
+  img.style.top = ((H - dh) / 2 + PC.y) + 'px';
+}
+function openPostCropper() {
+  if (!PM.orig) return toast('Escolha uma imagem primeiro.');
+  if (!/^image\//.test(PM.orig.type)) return toast('Só é possível recortar imagens.');
+  if (PC.url) URL.revokeObjectURL(PC.url);
+  PC.img = new Image();
+  PC.url = URL.createObjectURL(PM.orig);
+  PC.ratioKey = 'orig'; PC.x = 0; PC.y = 0; PC.zoom = 1;
+  PC.img.onload = () => renderPostCropper();
+  PC.img.src = PC.url;
+}
+function renderPostCropper() {
+  const old = $('pcOverlay'); if (old) old.remove();
+  const { W, H } = pcViewport();
+  const d = document.createElement('div'); d.id = 'pcOverlay';
+  d.innerHTML = `<div class="pcbox">
+    <div style="text-align:center"><h3 style="margin:0 0 .25rem">Recortar imagem</h3><div class="pcnote">Arraste para posicionar • use a barra ou a roda para dar zoom</div></div>
+    <div class="pcview" id="pcView" style="width:${W}px;height:${H}px"><img id="pcImg" src="${PC.url}" alt=""></div>
+    <div class="pcratios" id="pcRatios">
+      ${[['orig','Original'],['1','1:1'],[String(4/5),'4:5'],[String(16/9),'16:9']].map(([k,t]) => `<button type="button" class="${PC.ratioKey === k ? 'on' : ''}" onclick="pcSetRatio('${k}')">${t}</button>`).join('')}
+    </div>
+    <div class="pczoom"><button type="button" class="gh" style="padding:.2rem .6rem" onclick="pcZoom(-.1)">−</button><input type="range" min="1" max="4" step="0.01" value="${PC.zoom}" oninput="pcZoomTo(+this.value)" aria-label="Zoom"><button type="button" class="bl" style="padding:.2rem .6rem" onclick="pcZoom(.1)">+</button></div>
+    <div class="row" style="width:100%;justify-content:flex-end"><button type="button" class="gh" onclick="closePostCropper()">Cancelar</button><button type="button" class="bl" onclick="applyPostCrop()">Aplicar recorte</button></div>
+  </div>`;
+  document.body.appendChild(d);
+  pcPaint();
+  const view = $('pcView');
+  let drag = null;
+  view.addEventListener('pointerdown', (e) => { drag = { x: e.clientX, y: e.clientY, px: PC.x, py: PC.y }; view.classList.add('pcdrag'); try { view.setPointerCapture(e.pointerId); } catch {} e.preventDefault(); });
+  view.addEventListener('pointermove', (e) => { if (!drag) return; PC.x = drag.px + (e.clientX - drag.x); PC.y = drag.py + (e.clientY - drag.y); pcPaint(); e.preventDefault(); });
+  const end = () => { drag = null; view.classList.remove('pcdrag'); };
+  view.addEventListener('pointerup', end); view.addEventListener('pointercancel', end); view.addEventListener('pointerleave', end);
+  view.addEventListener('wheel', (e) => { e.preventDefault(); pcZoom(e.deltaY > 0 ? -.08 : .08); }, { passive: false });
+}
+function pcSetRatio(k) {
+  PC.ratioKey = k; PC.x = 0; PC.y = 0;
+  renderPostCropper();
+}
+function pcZoom(d) { pcZoomTo(PC.zoom + d); }
+function pcZoomTo(z) {
+  PC.zoom = Math.max(1, Math.min(4, z));
+  const r = document.querySelector('#pcOverlay .pczoom input'); if (r) r.value = PC.zoom;
+  pcPaint();
+}
+function closePostCropper() {
+  const d = $('pcOverlay'); if (d) d.remove();
+  if (PC.url) { URL.revokeObjectURL(PC.url); PC.url = ''; }
+  PC.img = null;
+}
+function applyPostCrop() {
+  if (!PC.img || !PM.orig) return;
+  const { W, H } = pcViewport();
+  const s = Math.max(W / PC.img.width, H / PC.img.height) * PC.zoom;
+  const sw = W / s, sh = H / s;
+  let sx = PC.img.width / 2 - sw / 2 - PC.x / s;
+  let sy = PC.img.height / 2 - sh / 2 - PC.y / s;
+  sx = Math.max(0, Math.min(PC.img.width - sw, sx));
+  sy = Math.max(0, Math.min(PC.img.height - sh, sy));
+  let outW = Math.max(1, Math.round(sw)), outH = Math.max(1, Math.round(sh));
+  if (outW > 1440) { outH = Math.round(outH * 1440 / outW); outW = 1440; }
+  const canvas = document.createElement('canvas'); canvas.width = outW; canvas.height = outH;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, outW, outH);
+  ctx.drawImage(PC.img, sx, sy, sw, sh, 0, 0, outW, outH);
+  canvas.toBlob((blob) => {
+    if (!blob) return toast('Não foi possível recortar esta imagem.');
+    const name = 'recorte-' + Date.now() + '.jpg';
+    PM.file = new File([blob], name, { type: 'image/jpeg', lastModified: Date.now() });
+    PM.recrop = true;
+    closePostCropper();
+    renderPostPreview();
+    toast('Imagem recortada');
+  }, 'image/jpeg', 0.92);
 }
 async function sendMedia(k) {
-  const f = $('nf').files[0]; if (!f) return ($('ne').textContent = 'Escolha uma foto ou vídeo.');
+  const f = PM.file || ($('nf').files[0]); if (!f) return ($('ne').textContent = 'Escolha uma foto ou vídeo.');
   const fd = new FormData(); fd.append('media', f); fd.append('caption', $('nc').value); fd.append('tags', $('nt').value);
   if (k === 'story') fd.append('mentions', $('nt').value);
   $('ne').textContent = 'Enviando...';
@@ -1026,6 +1170,8 @@ function openStory(gi, si = 0) {
   const own = g.uid === me.id;
   if (!own) viewStory(s.id); // só conta visualização de story de outra pessoa, dentro do visualizador
   s.seen = true; g.seen = g.items.every((x) => x.seen);
+  // Atualiza o anel do story no perfil sem esperar recarregar a página.
+  if (!own && g.seen) document.querySelectorAll('.pavring,.hl .ring').forEach((e) => e.classList.add('seen'));
   let o = $('sv'), first = !o;
   if (!o) { o = document.createElement('div'); o.id = 'sv'; o.className = 'ov dark'; o.onmousedown = (e) => { if (e.target === o) closeS(); }; document.body.appendChild(o); }
   const vid = s.type === 'video';
@@ -1046,7 +1192,7 @@ function openStory(gi, si = 0) {
   stGi = gi;
   stSid = s.id;
   o.innerHTML = `<div class="sbox ${first ? 'first' : dir > 0 ? 'inR' : dir < 0 ? 'inL' : ''}"><div class="bars">${g.items.map((_, i) => `<i class="${i < si ? 'f' : ''}">${i === si ? '<b id="sb"></b>' : ''}</i>`).join('')}</div>
-    <div class="sh">${av(g, 32)}${vf(g.verified,g.username)}<b>${esc(g.username)}</b><small>${rt(s.created)}</small>
+    <div class="sh">${av(g, 32)}${vf(g.verified,g.username)}${ul(g.username, `<b>${esc(g.username)}</b>`)}<small>${rt(s.created)}</small>
       ${s.mentions ? `<small style="color:#8fa0ff"> ${s.mentions.split(',').filter(Boolean).map((n) => `<a onclick="closeS();go('profile','${esc(n)}')" style="cursor:pointer">@${esc(n)}</a>`).join(' ')} </small>` : ''}
       <div class="hr">${volCtl('story')}<button id="spb" onclick="storyTogglePause()" aria-label="Pausar" style="color:#fff">${I('pause', 20)}</button>${own ? `<button onclick="storyMenu(${s.id})" aria-label="Mais opções" style="color:#fff">${I('dots', 20)}</button>` : ''}<button onclick="closeS()" aria-label="Fechar">${I('x', 22)}</button></div></div>
     ${vid ? `<video class="sm" src="${s.media}" autoplay playsinline></video>` : `<img class="sm" src="${s.media}" alt="">`}
@@ -1102,12 +1248,30 @@ async function reels() {
 
 /* ---------- Perfil ---------- */
 const TABS = [['feed', 'grid', 'Feed'], ['reels', 'reels', 'Reels'], ['reposts', 'repost', 'Republicado'], ['tagged', 'tag', 'Marcações']];
+const storyThumb = (st) => {
+  const it = st && st.items && st.items[st.items.length - 1];
+  if (!it) return '';
+  return it.type === 'video'
+    ? `<video src="${esc(it.media)}#t=0.1" muted playsinline preload="metadata"></video>`
+    : `<img src="${esc(it.media)}" alt="">`;
+};
+async function openProfileStory(name) {
+  try {
+    const g = await api('/api/stories/user/' + encodeURIComponent(name));
+    if (!g || !g.count) return toast('Nenhum story ativo.');
+    G = [g];
+    openStory(0, 0);
+  } catch (e) { toast(e.message); }
+}
 async function profile(name) {
   name = name || me.username;
   let d;
   try { d = await api('/api/u/' + encodeURIComponent(name)); } catch (e) { $('view').innerHTML = `<p class="empty">${esc(e.message)}</p>`; return; }
   if (view !== 'profile') return;
   const u = d.user, self = d.rel === 'self';
+  const st = d.story || { count: 0, items: [], seen: false };
+  const hasStory = st.count > 0;
+  const ringCls = st.seen ? 'seen' : '';
   if (self) { me = u; renderSide(); }
   if (lastProf !== u.username) { curTab = 'feed'; lastProf = u.username; }
   const reqs = self ? await api('/api/requests') : [];
@@ -1121,14 +1285,16 @@ async function profile(name) {
   const btns = self
     ? `<button class="gh" onclick="editProfile()">Editar perfil</button><button class="gh" onclick="changeUsernameUI()">Trocar username</button><button class="gh" onclick="shareProfile('${u.username}')">Compartilhar perfil</button>`
     : `<button class="${d.rel === 'none' ? 'bl' : 'gh'}" onclick="follow(${u.id},'${u.username}')">${RL[d.rel]}</button><button class="gh" onclick="openChat(${u.id},'${u.username}')">Mensagem</button><button class="gh" onclick="blockUser(${u.id})">Bloquear @${esc(u.username)}</button>`;
-  $('view').innerHTML = `<div class="prof"><div class="pt">${av(u, 150)}<div class="pi">
+  $('view').innerHTML = `<div class="prof"><div class="pt"><div class="pav">${hasStory ? `<button class="pavring ${ringCls}" onclick="openProfileStory('${esc(u.username)}')" title="Ver story" aria-label="Ver story">${av(u, 150)}</button>` : av(u, 150)}</div><div class="pi">
       <div class="row"><h2>${esc(u.username)}${vf(u.verified,u.username)}</h2>${u.private ? `<small title="Conta privada">${I('lock', 16)}</small>` : ''}</div>
       <div class="cnt"><span><b>${d.count.posts}</b> posts</span><span><b>${d.count.followers}</b> seguidores</span><span><b>${d.count.following}</b> seguindo</span></div>
       <div class="bio"><b>${esc(u.name || '')}</b><p>${linkify(esc(u.bio || ''))}</p>
       ${u.song_url ? `<div class="song"><button data-src="${esc(u.song_url)}" data-start="${u.song_start || 0}" data-dur="${u.song_dur || 0}" onclick="playSong(this)" aria-label="Tocar prévia">▶</button>${u.song_art ? `<img src="${esc(u.song_art)}" alt="">` : ''}<span><b>${esc(u.song_title)}</b><small>${esc(u.song_artist)}</small></span></div>` : ''}</div></div></div>
     <div class="pbt">${btns}</div>
-    ${reqs.length ? `<div class="reqs"><b>Solicitações para seguir</b>${reqs.map((r) => `<div class="rq">${av(r, 36)}<span>@${esc(r.username)}</span><button class="bl" onclick="reqAct(${r.id},'accept')">Aceitar</button><button class="gh" onclick="reqAct(${r.id},'decline')">Recusar</button></div>`).join('')}</div>` : ''}
-    ${self ? `<div class="hl"><button onclick="newPost('story')"><div class="nw">${I('plus', 34)}</div>Novo</button></div>` : '<div style="height:1.4rem"></div>'}
+    ${reqs.length ? `<div class="reqs"><b>Solicitações para seguir</b>${reqs.map((r) => `<div class="rq">${av(r, 36)}<span>${ul(r.username, '@' + esc(r.username))}</span><button class="bl" onclick="reqAct(${r.id},'accept')">Aceitar</button><button class="gh" onclick="reqAct(${r.id},'decline')">Recusar</button></div>`).join('')}</div>` : ''}
+    ${hasStory
+      ? `<div class="hl"><button onclick="openProfileStory('${esc(u.username)}')"><div class="ring ${ringCls}"><div class="hlthumb">${storyThumb(st)}</div></div><small>${self ? 'Seu story' : 'Story'}</small></button>${self ? `<button onclick="newPost('story')"><div class="nw">${I('plus', 34)}</div>Novo</button>` : ''}</div>`
+      : self ? `<div class="hl"><button onclick="newPost('story')"><div class="nw">${I('plus', 34)}</div>Novo</button></div>` : '<div style="height:1.4rem"></div>'}
     ${d.canSee ? `<div class="tabs" role="tablist">${TABS.map(([k, ic, t]) => `<button class="tab" role="tab" data-t="${k}" onclick="setTab('${k}')">${I(ic, 20)}<span>${t}</span></button>`).join('')}<i class="ink"></i></div><div class="tc" id="tc"></div>`
       : `<div class="eg" style="border-top:1px solid var(--line)"><div class="circ">${I('lock', 28)}</div><h3 style="font-size:1.3rem">Esta conta é privada</h3><p class="empty">Siga para ver as fotos e vídeos.</p></div>`}</div>`;
   if (d.canSee) { setTab(curTab, true); window.addEventListener('resize', moveInk); }
@@ -1340,7 +1506,7 @@ async function loadChatList() {
     unread = chatUsers.reduce((a, u) => a + (u.unread || 0), 0); badges(true);
     $('cl').innerHTML = '<h3>Mensagens</h3>' + (chatUsers.map((u) => {
       const n = u.unread || 0;
-      return `<button class="rq${n ? ' unread' : ''}" data-id="${u.id}" onclick="openChat(${u.id},'${esc(u.username)}')">${av(u, 48)}<span><b>${esc(u.username)}${vf(u.verified, u.username)}</b><small class="pv">${chatPreview(u)}</small></span>${n ? `<em class="cbd" title="${n} mensagens novas">${n > 8 ? '9+' : n}</em>` : ''}</button>`;
+      return `<div class="rq${n ? ' unread' : ''}" data-id="${u.id}" role="button" tabindex="0" onclick="openChat(${u.id},'${esc(u.username)}')">${av(u, 48)}<span>${ul(u.username, `<b>${esc(u.username)}${vf(u.verified, u.username)}</b>`)}<small class="pv">${chatPreview(u)}</small></span>${n ? `<em class="cbd" title="${n} mensagens novas">${n > 8 ? '9+' : n}</em>` : ''}</div>`;
     }).join('') || '<p class="empty">Siga alguém para começar uma conversa.</p>');
     if (peer) document.querySelectorAll('#cl .rq').forEach((b) => b.classList.toggle('on', +b.dataset.id === peer.id));
   } catch {
@@ -1365,7 +1531,7 @@ async function openChat(id, name) {
   dmReset();
   peer = { id, name };
   document.querySelectorAll('#cl .rq').forEach((b) => b.classList.toggle('on', +b.dataset.id === id));
-  $('room').innerHTML = `<div class="rh"><span class="rhname" title="${esc(name)}">${esc(name)}</span><span class="rhactions"><button class="ib" onclick="togglePinChat(${id})" title="Fixar/desafixar conversa" aria-label="Fixar conversa">${I('shield', 16)}</button><button class="ib" onclick="deleteChat(${id})" title="Excluir conversa" aria-label="Excluir conversa">${I('x', 16)}</button></span></div><div id="msgs"></div><form id="send" onsubmit="sendMsg(event)"><input id="mt" placeholder="Mensagem..." autocomplete="off"><button type="button" class="ib" onclick="pickDMFile()" title="Anexar foto ou vídeo" aria-label="Anexar mídia">${I('camera', 18)}</button><button type="button" class="ib" onclick="pickDMAudio()" title="Enviar áudio do dispositivo" aria-label="Enviar áudio">${I('music', 18)}</button><button type="button" class="ib" onclick="openEmojiPicker('mt')" title="Emoji" aria-label="Emoji">${I('smile', 18)}</button><button class="bl">Enviar</button></form>`;
+  $('room').innerHTML = `<div class="rh"><span class="rhname" title="${esc(name)}">${name === 'Conversa' ? esc(name) : ul(name, esc(name))}</span><span class="rhactions"><button class="ib" onclick="togglePinChat(${id})" title="Fixar/desafixar conversa" aria-label="Fixar conversa">${I('shield', 16)}</button><button class="ib" onclick="deleteChat(${id})" title="Excluir conversa" aria-label="Excluir conversa">${I('x', 16)}</button></span></div><div id="msgs"></div><form id="send" onsubmit="sendMsg(event)"><input id="mt" placeholder="Mensagem..." autocomplete="off"><button type="button" class="ib" onclick="pickDMFile()" title="Anexar foto ou vídeo" aria-label="Anexar mídia">${I('camera', 18)}</button><button type="button" class="ib" onclick="pickDMAudio()" title="Enviar áudio do dispositivo" aria-label="Enviar áudio">${I('music', 18)}</button><button type="button" class="ib" onclick="openEmojiPicker('mt')" title="Emoji" aria-label="Emoji">${I('smile', 18)}</button><button class="bl">Enviar</button></form>`;
   try {
     const msgs = await api('/api/messages/' + id);
     if (view !== 'chats' || !peer || peer.id !== id || req !== chatLoadId) return;
@@ -1375,7 +1541,7 @@ async function openChat(id, name) {
   if (view === 'chats' && peer && peer.id === id) { await markChatRead(id); loadChatList(); }
   $('mt') && window.matchMedia('(hover:hover)').matches && $('mt').focus();
 }
-const miniPost = (p) => { P[p.id] = p; return `<div class="mp" onclick="openPost(${p.id})">${p.type === 'video' ? `<video src="${p.media}#t=0.1" muted preload="metadata"></video>` : `<img src="${p.media}" alt="">`}<small><b>@${esc(p.username)}</b> ${esc((p.caption || '').slice(0, 60))}</small></div>`; };
+const miniPost = (p) => { P[p.id] = p; return `<div class="mp" onclick="openPost(${p.id})">${p.type === 'video' ? `<video src="${p.media}#t=0.1" muted preload="metadata"></video>` : `<img src="${p.media}" alt="">`}<small>${ul(p.username, `<b>@${esc(p.username)}</b>`)} ${esc((p.caption || '').slice(0, 60))}</small></div>`; };
 function addMsg(m) {
   const box = $('msgs'); if (!box) return;
   if (m.id != null && box.querySelector('[data-mid="' + m.id + '"]')) return; // idempotente: nunca duplica
@@ -1573,7 +1739,7 @@ async function commentStory(storyId, inp) {
 }
 async function loadStoryReactions(storyId) {
   storyPause();
-  try { const r = await api(`/api/stories/${storyId}/reactions`); modal(`<h3>Reações</h3>${r.map((x) => `<div class="rq">${av(x, 40)}<span><b>${esc(x.username)}${vf(x.verified,x.username)}</b><small>${x.type === 'like' ? '❤️ curtiu' : '💬 ' + esc(x.text)}</small></span></div>`).join('') || '<p class="empty">Sem reações.</p>'}`); } catch (e) { toast(e.message); }
+  try { const r = await api(`/api/stories/${storyId}/reactions`); modal(`<h3>Reações</h3>${r.map((x) => `<div class="rq">${av(x, 40)}<span>${ul(x.username, `<b>${esc(x.username)}${vf(x.verified,x.username)}</b>`)}<small>${x.type === 'like' ? '❤️ curtiu' : '💬 ' + esc(x.text)}</small></span></div>`).join('') || '<p class="empty">Sem reações.</p>'}`); } catch (e) { toast(e.message); }
 }
 
 // ---- Visualizacoes de Story ----
@@ -1582,7 +1748,7 @@ async function viewStory(storyId) {
 }
 async function getStoryViews(storyId) {
   storyPause();
-  try { const r = await api(`/api/stories/${storyId}/views`); modal(`<h3>Visualizações</h3><p><b>${r.count}</b> ${r.count === 1 ? 'perfil viu' : 'perfis viram'} esta story.</p>${r.viewers.map((v) => `<div class="rq">${av(v, 40)}<span><b>${esc(v.username)}${vf(v.verified,v.username)}</b><small>${rt(v.viewed_at)}</small></span></div>`).join('')}`); } catch (e) { toast(e.message); }
+  try { const r = await api(`/api/stories/${storyId}/views`); modal(`<h3>Visualizações</h3><p><b>${r.count}</b> ${r.count === 1 ? 'perfil viu' : 'perfis viram'} esta story.</p>${r.viewers.map((v) => `<div class="rq">${av(v, 40)}<span>${ul(v.username, `<b>${esc(v.username)}${vf(v.verified,v.username)}</b>`)}<small>${rt(v.viewed_at)}</small></span></div>`).join('')}`); } catch (e) { toast(e.message); }
 }
 
 // ---- Trocar Username ----
