@@ -658,6 +658,8 @@ async function start() {
     if (view === 'chats' && $('cl')) loadChatList();
     else if (+m.to_id === me.id) { unread++; badges(); }
   });
+  sock.on('msg_edited', (m) => { updateMsgEl(m); if ($('cl')) loadChatList(); });
+  sock.on('msg_deleted', ({ id }) => { removeMsgEl(id); if ($('cl')) loadChatList(); });
   sock.on('story_view', ({ story_id }) => {
     const g = G.find((x) => x.items.some((i) => i.id === story_id));
     const it = g && g.items.find((i) => i.id === story_id);
@@ -1708,7 +1710,7 @@ async function openChat(id, name) {
   document.querySelectorAll('#cl .rq').forEach((b) => b.classList.toggle('on', +b.dataset.id === id));
   document.body.classList.add('chatopen');
   const chatEl = $('chat'); if (chatEl) chatEl.classList.add('room-open');
-  $('room').innerHTML = `<div class="rh"><button class="ib backbtn" onclick="go('chats')" aria-label="Voltar">${I('back', 20)}</button><span class="rhname" title="${esc(name)}">${name === 'Conversa' ? esc(name) : ul(name, esc(name))}</span><span class="rhactions"><button class="ib" onclick="togglePinChat(${id})" title="Fixar/desafixar conversa" aria-label="Fixar conversa">${I('shield', 16)}</button><button class="ib" onclick="deleteChat(${id})" title="Excluir conversa" aria-label="Excluir conversa">${I('x', 16)}</button></span></div><div id="msgs"></div><form id="send" onsubmit="sendMsg(event)"><input id="mt" placeholder="Mensagem..." autocomplete="off"><button type="button" class="ib" onclick="pickDMFile()" title="Anexar foto ou vídeo" aria-label="Anexar mídia">${I('camera', 18)}</button><button type="button" class="ib" onclick="pickDMAudio()" title="Enviar áudio do dispositivo" aria-label="Enviar áudio">${I('music', 18)}</button><button type="button" class="ib" onclick="openEmojiPicker('mt')" title="Emoji" aria-label="Emoji">${I('smile', 18)}</button><button class="bl">Enviar</button></form>`;
+  $('room').innerHTML = `<div class="rh"><button class="ib backbtn" onclick="go('chats')" aria-label="Voltar">${I('back', 20)}</button><span class="rhname" title="${esc(name)}">${name === 'Conversa' ? esc(name) : ul(name, esc(name))}</span><span class="rhactions"><button class="ib" onclick="togglePinChat(${id})" title="Fixar/desafixar conversa" aria-label="Fixar conversa">${I('shield', 16)}</button><button class="ib" onclick="deleteChat(${id})" title="Excluir conversa" aria-label="Excluir conversa">${I('x', 16)}</button></span></div><div id="msgs"></div><form id="send" onsubmit="sendMsg(event)"><input id="mt" placeholder="Mensagem... (Ctrl+V cola mídia)" autocomplete="off" title="Cole uma imagem, vídeo ou áudio com Ctrl+V"><button type="button" class="ib" onclick="pickDMFile()" title="Anexar foto ou vídeo" aria-label="Anexar mídia">${I('camera', 18)}</button><button type="button" class="ib" onclick="pickDMAudio()" title="Enviar áudio do dispositivo" aria-label="Enviar áudio">${I('music', 18)}</button><button type="button" class="ib" onclick="openEmojiPicker('mt')" title="Emoji" aria-label="Emoji">${I('smile', 18)}</button><button class="bl">Enviar</button></form>`;
   try {
     const msgs = await api('/api/messages/' + id);
     if (view !== 'chats' || !peer || peer.id !== id || req !== chatLoadId) return;
@@ -1784,6 +1786,29 @@ function addMsg(m) {
     }
   }
 }
+// Atualiza uma mensagem já visível (útil para editar/excluir ao vivo)
+function updateMsgEl(m) {
+  const el = document.querySelector('#msgs [data-mid="' + m.id + '"]');
+  if (!el) return;
+  el.dataset.mtext = m.text || '';
+  const editedBadge = m.edited_at ? '<small style="color:var(--mute);font-size:.65rem;margin-left:.4rem">editado</small>' : '';
+  const spanHtml = m.text ? `<span>${linkify(esc(m.text))}${editedBadge}</span>` : '';
+  const current = el.querySelector(':scope > span');
+  if (spanHtml) {
+    if (current) current.outerHTML = spanHtml;
+    else {
+      const t = document.createElement('div'); t.innerHTML = spanHtml;
+      const mtools = el.querySelector(':scope > .mtools');
+      el.insertBefore(t.firstElementChild, mtools || null);
+    }
+  } else if (current) current.remove();
+}
+
+function removeMsgEl(id) {
+  const el = document.querySelector('#msgs [data-mid="' + id + '"]');
+  if (el) el.remove();
+}
+
 function openPostByIdMsg(media) { window.open(media, '_blank'); }
 function sendMsg(e) {
   e.preventDefault();
@@ -1962,29 +1987,33 @@ async function deleteChat(id) {
   try { await api(`/api/chat/${id}`, { method: 'DELETE' }); toast('Conversa excluída'); go('chats'); } catch (e) { toast(e.message); }
 }
 
-// ---- Enviar mídia na DM (sem duplicar: o servidor devolve o eco com o ID real) ----
+// ---- Enviar mídia na DM (usa o mesmo caminho do botão e do colar Ctrl+V) ----
+async function sendDMMediaFile(file, opts) {
+  if (!peer || !file) return false;
+  const chat = { id: peer.id, name: peer.name };
+  if (!(opts && opts.skipAsk) && !(await ask(`Enviar "${file.name || 'mídia colada'}" para @${chat.name}?`, 'Enviar', 'Cancelar'))) return false;
+  const fd = new FormData(); fd.append('media', file);
+  try {
+    const r = await fetch('/api/dm/media', { method: 'POST', headers: { Authorization: 'Bearer ' + token }, body: fd });
+    let d = {};
+    try { d = await r.json(); } catch {}
+    if (!r.ok || !d.url) throw new Error(d.error || 'Falha ao enviar mídia.');
+    if (!sock || !sock.connected) throw new Error('Sem conexão. Verifique sua internet.');
+    sock.emit('msg', { to: chat.id, media: d.url, media_type: d.type });
+    toast('Mídia enviada');
+    return true;
+  } catch (err) { toast(err.message); return false; }
+}
 async function pickDMFile() {
   if (!peer) return toast('Selecione uma conversa.');
-  const chat = { id: peer.id, name: peer.name };
   const input = document.createElement('input');
   input.type = 'file';
   input.accept = 'image/*,video/*';
   input.style.display = 'none';
   document.body.appendChild(input);
   input.onchange = async (e) => {
-    const f = e.target.files[0]; if (!f) return;
-    if (!(await ask(`Enviar "${f.name}" para @${chat.name}?`, 'Enviar', 'Cancelar'))) { input.remove(); return; }
-    const fd = new FormData(); fd.append('media', f);
-    try {
-      const r = await fetch('/api/dm/media', { method: 'POST', headers: { Authorization: 'Bearer ' + token }, body: fd });
-      let d = {};
-      try { d = await r.json(); } catch {}
-      if (!r.ok || !d.url) throw new Error(d.error || 'Falha ao enviar mídia.');
-      if (!sock || !sock.connected) throw new Error('Sem conexão. Verifique sua internet.');
-      sock.emit('msg', { to: chat.id, media: d.url, media_type: d.type });
-      toast('Mídia enviada');
-    } catch (err) { toast(err.message); }
-    finally { input.remove(); }
+    const f = e.target.files[0]; if (!f) { input.remove(); return; }
+    try { await sendDMMediaFile(f); } finally { input.remove(); }
   };
   input.click();
 }
@@ -2174,6 +2203,24 @@ window.addEventListener('scroll', () => {
     if (m) m.remove();
     dmVideoMenuOpen = null;
   }
+});
+
+// Ctrl+V com mídia na DM (imagem, vídeo ou áudio) - se for só texto, mantém o colar normal
+document.addEventListener('paste', async (e) => {
+  if (view !== 'chats' || !peer) return;
+  const t = e.target;
+  if (!t || !t.closest || !t.closest('#room')) return;
+  const files = e.clipboardData && e.clipboardData.files;
+  let file = files && files.length ? files[0] : null;
+  if (!file && e.clipboardData && e.clipboardData.items) {
+    for (const it of e.clipboardData.items) {
+      if (it.kind === 'file') { file = it.getAsFile(); break; }
+    }
+  }
+  if (!file) return;
+  if (!/^(image|video|audio)\//.test(file.type || '')) return;
+  e.preventDefault();
+  await sendDMMediaFile(file);
 });
 
 if (token) start(); else showAuth();
