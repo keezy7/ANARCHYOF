@@ -302,12 +302,12 @@ main{margin-left:72px}
 @media(hover:none){.m .mtools{max-height:none;margin-top:.3rem;opacity:1;pointer-events:auto}}
 /* menção de mensagem (quote) */
 .m{position:relative}
-.reply{display:flex;align-items:center;gap:.4rem;border-left:3px solid var(--blue);background:rgba(255,255,255,.05);border-radius:8px;padding:.25rem .35rem;margin-bottom:.35rem;max-width:240px}
+.reply{display:flex;align-items:center;gap:.5rem;max-width:230px;padding:.3rem .45rem;margin-bottom:.35rem;background:var(--soft2);border-radius:14px}
 .reply .reply-body{min-width:0;flex:1}
-.reply b{display:block;font-size:.68rem;color:var(--blue)}
-.reply small{display:block;font-size:.72rem;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.reply b{display:block;font-size:.66rem;font-weight:600;color:var(--ink)}
+.reply small{display:block;font-size:.7rem;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .reply .reply-thumb{flex:none}
-.reply img,.reply video{width:40px;height:40px;border-radius:6px;object-fit:cover;background:#000;display:block}
+.reply img,.reply video{width:36px;height:36px;border-radius:10px;object-fit:cover;background:#000;display:block}
 .reply-toggle{position:absolute;top:4px;right:6px;width:26px;height:26px;border-radius:8px;display:grid;place-items:center;color:var(--mute);opacity:0;transition:opacity .15s,background .15s}
 .reply-toggle:hover{background:rgba(255,255,255,.07);color:var(--ink)}
 .m:hover .reply-toggle,.m:focus-within .reply-toggle{opacity:1}
@@ -318,6 +318,7 @@ main{margin-left:72px}
 #replybar{display:flex;align-items:center;gap:.45rem;border-top:1px solid var(--line);padding:.4rem .55rem;flex:none;background:var(--soft)}
 #replybar.hide{display:none}
 #replybar-body{flex:1;min-width:0}
+#replybar-body .reply{margin:0;max-width:none}
 /* player de áudio da DM */
 .dm-audio{display:flex;align-items:center;gap:.55rem;width:230px;max-width:100%;padding:.1rem 0}
 .dm-audio .aplay{width:34px;height:34px;flex:none;border-radius:50%;background:var(--ink);color:var(--bg);display:grid;place-items:center;font-size:13px;line-height:1}
