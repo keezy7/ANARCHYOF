@@ -797,6 +797,31 @@ app.delete('/api/comments/:id', auth, async (req, res) => {
   res.json({ ok: true });
 });
 
+// ---------- Editar / excluir mensagem DM ----------
+app.put('/api/messages/:id', auth, async (req, res) => {
+  const id = +req.params.id;
+  const me = req.user.id;
+  const m = await get('SELECT from_id, media FROM messages WHERE id=$1 AND deleted=0', [id]);
+  if (!m || m.from_id !== me) return res.status(403).json({ error: 'Não autorizado.' });
+
+  const text = String((req.body || {}).text || '').trim().slice(0, 1000);
+  // Mensagem só de texto não pode ficar vazia; com mídia, pode limpar o texto
+  if (!text && !m.media) return res.status(400).json({ error: 'Mensagem vazia.' });
+
+  await run('UPDATE messages SET text=$1, edited_at=$2 WHERE id=$3', [text, Date.now(), id]);
+  res.json({ ok: true });
+});
+
+app.delete('/api/messages/:id', auth, async (req, res) => {
+  const id = +req.params.id;
+  const me = req.user.id;
+  const m = await get('SELECT from_id FROM messages WHERE id=$1', [id]);
+  if (!m || m.from_id !== me) return res.status(403).json({ error: 'Não autorizado.' });
+
+  await run('UPDATE messages SET deleted=1 WHERE id=$1', [id]);
+  res.json({ ok: true });
+});
+
 // ---------- Mensagens ----------
 app.get('/api/chats', auth, async (req, res) => {
   const me = req.user.id;

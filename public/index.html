@@ -1858,7 +1858,7 @@ function editMessage(id, btn) {
     try {
       await api(`/api/messages/${id}`, { method: 'PUT', json: { text: t } });
       d.dataset.mtext = t; span.innerHTML = `${linkify(esc(t))}<small style="color:var(--mute);font-size:.65rem;margin-left:.4rem">editado</small>`;
-      restore(); toast('Mensagem editada');
+      restore(); if ($('cl')) loadChatList(); toast('Mensagem editada');
     } catch (e) { toast(e.message); restore(); }
   }, restore, 'rgba(255,255,255,.75)');
 }
@@ -1869,7 +1869,7 @@ async function deleteMessage(id) {
     const a = dmAudios.get(id); if (a) { a.pause(); dmAudios.delete(id); }
     dmSrc.delete(id);
     toast('Mensagem excluída');
-    if (peer) openChat(peer.id, peer.name);
+    if (peer) { await openChat(peer.id, peer.name); if ($('cl')) loadChatList(); }
   } catch (e) { toast(e.message); }
 }
 
@@ -2162,6 +2162,7 @@ async function deleteDmVideo(id) {
   try {
     await api('/api/messages/' + id, { method: 'DELETE' });
     el.remove();
+    if ($('cl')) loadChatList();
     toast('Mídia excluída');
   } catch (e) { toast(e.message); }
 }
