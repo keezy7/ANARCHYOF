@@ -1143,16 +1143,18 @@ const cmts = (p, full) => {
 };
 function postCard(p, i = 0) {
   P[p.id] = p;
+  const isRepost = !!p.repost_of;
+  const author = isRepost ? { username: p.orig, avatar: p.orig_avatar, verified: p.verified, verified_color: p.verified_color } : p;
   return `<article class="post" id="p${p.id}" style="--i:${i}">
-  <div class="ph"><a onclick="go('profile','${p.username}')">${av(p, 36)}</a>
-    <div class="who"><b onclick="go('profile','${p.username}')">${esc(p.username)}</b>${vf(p.verified,p.username,p.verified_color)}<small> • ${rt(p.created)}</small>
-    ${p.orig ? `<div class="ro">↻ republicado de ${ul(p.orig, '@' + esc(p.orig))}</div>` : ''}</div>
+  <div class="ph"><a onclick="go('profile','${author.username}')">${av(author, 36)}</a>
+    <div class="who"><b onclick="go('profile','${author.username}')">${esc(author.username)}</b>${vf(author.verified,author.username,author.verified_color)}<small> • ${rt(p.created)}</small>
+    ${isRepost ? `<div class="ro">↻ republicado por você de ${ul(p.orig, '@' + esc(p.orig))}</div>` : ''}</div>
     <button class="mo" onclick="postMenu(${p.id})" aria-label="Mais">${I('dots', 22)}</button></div>
   <div class="pm" ondblclick="dbl(${p.id},this)">${media(p)}</div>
   <div class="pa" data-pa="${p.id}">${acts(p)}</div>
   <div class="pb"><div class="pl" data-pl="${p.id}">${likesTxt(p)}</div>
     ${tagsLine(p)}
-    ${p.caption ? `<p>${ul(p.username, `<b>${esc(p.username)}</b>`)} ${linkify(esc(p.caption))}</p>` : ''}
+    ${p.caption ? `<p>${ul(author.username, `<b>${esc(author.username)}</b>`)} ${linkify(esc(p.caption))}</p>` : ''}
     ${p.song_preview ? `<div class="song" style="margin:.4rem 0"><button onclick="au&&au.src==='${esc(p.song_preview)}'&&!au.paused?au.pause():playSongPost('${esc(p.song_preview)}',${p.id})" aria-label="Tocar prévia">▶</button><input type="range" min="0" max="${p.song_duration || 30}" value="0" style="width:110px;margin-left:.4rem"><small style="color:var(--mute)">Prévia da música</small></div>` : ''}
     <div data-cl="${p.id}">${cmts(p)}</div>
     <input placeholder="Adicione um comentário..." maxlength="300" onkeydown="if(event.key==='Enter')cmt(${p.id},this)"><button type="button" onclick="openEmojiPicker('cmt-${p.id}')" title="Emoji">${I('smile', 16)}</button></div></article>`;
@@ -1160,9 +1162,11 @@ function postCard(p, i = 0) {
 function postDetail(p) {
   P[p.id] = p;
   const fullscreenBtn = p.type === 'video' ? `<button class="ib" onclick="toggleFullscreenVideo()" aria-label="Tela cheia">${I('expand', 20)}</button>` : '';
+  const isRepost = !!p.repost_of;
+  const author = isRepost ? { username: p.orig, avatar: p.orig_avatar, verified: p.verified, verified_color: p.verified_color } : p;
   return `<div class="pdet"><div class="pdm">${media(p, true)}</div><div class="pdr">
-    <div class="pdh">${av(p, 34)}<b onclick="go('profile','${p.username}')">${esc(p.username)}${vf(p.verified,p.username,p.verified_color)}</b>${fullscreenBtn}<button class="ib" onclick="postMenu(${p.id})" aria-label="Mais opções" style="margin-left:auto">${I('dots', 20)}</button><button class="ib" onclick="closeM()" aria-label="Fechar">${I('x', 20)}</button></div>
-    <div class="pdc">${p.caption ? `<p>${ul(p.username, `<b>${esc(p.username)}</b>`)} ${linkify(esc(p.caption))}</p>` : ''}${tagsLine(p)}
+    <div class="pdh">${av(author, 34)}<b onclick="go('profile','${author.username}')">${esc(author.username)}</b>${vf(author.verified,author.username,author.verified_color)}${isRepost ? `<small style="margin-left:6px">Repostado por você</small>` : ''}${fullscreenBtn}<button class="ib" onclick="postMenu(${p.id})" aria-label="Mais opções" style="margin-left:auto">${I('dots', 20)}</button><button class="ib" onclick="closeM()" aria-label="Fechar">${I('x', 20)}</button></div>
+    <div class="pdc">${p.caption ? `<p>${ul(author.username, `<b>${esc(author.username)}</b>`)} ${linkify(esc(p.caption))}</p>` : ''}${tagsLine(p)}
     ${p.song_preview ? `<div class="song" style="margin:.4rem 0"><button onclick="playSongPost('${esc(p.song_preview)}',${p.id})" aria-label="Tocar prévia">▶</button><input type="range" min="0" max="${p.song_duration || 30}" value="0" style="width:110px;margin-left:.4rem"><small style="color:var(--mute)">Prévia da música</small></div>` : ''}
     <div data-cl="${p.id}" data-full="1">${cmts(p, true) || '<small>Sem comentários ainda.</small>'}</div></div>
     <div class="pa" data-pa="${p.id}">${acts(p)}</div><div class="pl" data-pl="${p.id}">${likesTxt(p)} · <small>${rt(p.created)}</small></div>
@@ -1558,7 +1562,7 @@ async function profile(name) {
   const reqs = self ? await api('/api/requests') : [];
   [...d.items, ...d.tagged].forEach((p) => { P[p.id] = p; });
   PD = {
-    feed: d.items.filter((p) => !p.repost_of && p.type === 'image'),
+    feed: d.items.filter((p) => !p.repost_of),
     reels: d.items.filter((p) => !p.repost_of && p.type === 'video'),
     reposts: d.items.filter((p) => p.repost_of),
     tagged: d.tagged, self, name: u.username,

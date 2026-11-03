@@ -510,7 +510,7 @@ app.get('/api/badge-colors', auth, async (req, res) => {
   const rows = await all("SELECT LOWER(username) AS username, verified_color FROM users WHERE verified=1 AND verified_color<>''");
   res.json(rows);
 });
-const POST = `SELECT p.id,p.caption,p.media,p.type,p.created,p.user_id,p.repost_of,u.username,u.avatar,u.verified,u.verified_color,ou.username AS orig,p.song_preview,p.song_duration,p.edited_at,
+const POST = `SELECT p.id,p.caption,p.media,p.type,p.created,p.user_id,p.repost_of,u.username,u.avatar,u.verified,u.verified_color,ou.username AS orig,ou.avatar AS orig_avatar,p.song_preview,p.song_duration,p.edited_at,
  (SELECT COUNT(*) FROM likes WHERE post_id=p.id) AS likes,
  (SELECT COUNT(*) FROM comments WHERE post_id=p.id AND deleted=0) AS ncomments,
  (SELECT COUNT(*) FROM posts r WHERE r.repost_of=COALESCE(p.repost_of,p.id) AND r.deleted=0) AS reposts,
