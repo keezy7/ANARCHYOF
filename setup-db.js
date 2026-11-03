@@ -159,6 +159,7 @@ const pool = new Pool({
     await addCol('messages', 'type', 'TEXT DEFAULT \'\'');
     await addCol('messages', 'edited_at', 'BIGINT DEFAULT 0');
     await addCol('messages', 'deleted', 'INTEGER DEFAULT 0');
+    await addCol('messages', 'reply_id', 'INTEGER');
     await addCol('notifs', 'story_id', 'INTEGER');
     await addCol('notifs', 'text', "TEXT DEFAULT ''");
 

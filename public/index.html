@@ -300,6 +300,24 @@ main{margin-left:72px}
 .m .mtools button{font-size:.68rem;padding:.12rem .45rem;border-radius:6px;color:var(--mute)}
 .m .mtools button:hover{background:rgba(255,255,255,.08);color:var(--ink)}
 @media(hover:none){.m .mtools{max-height:none;margin-top:.3rem;opacity:1;pointer-events:auto}}
+/* menção de mensagem (quote) */
+.m{position:relative}
+.reply{display:flex;align-items:center;gap:.4rem;border-left:3px solid var(--blue);background:rgba(255,255,255,.05);border-radius:8px;padding:.25rem .35rem;margin-bottom:.35rem;max-width:240px}
+.reply .reply-body{min-width:0;flex:1}
+.reply b{display:block;font-size:.68rem;color:var(--blue)}
+.reply small{display:block;font-size:.72rem;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.reply .reply-thumb{flex:none}
+.reply img,.reply video{width:40px;height:40px;border-radius:6px;object-fit:cover;background:#000;display:block}
+.reply-toggle{position:absolute;top:4px;right:6px;width:26px;height:26px;border-radius:8px;display:grid;place-items:center;color:var(--mute);opacity:0;transition:opacity .15s,background .15s}
+.reply-toggle:hover{background:rgba(255,255,255,.07);color:var(--ink)}
+.m:hover .reply-toggle,.m:focus-within .reply-toggle{opacity:1}
+@media(hover:none){.reply-toggle{opacity:1}}
+.reply-pop{position:absolute;top:34px;right:6px;z-index:10;min-width:170px;background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:.35rem;box-shadow:0 10px 30px rgba(0,0,0,.4);animation:popMenu .18s var(--ease)}
+.reply-pop button{display:flex;align-items:center;gap:.65rem;width:100%;padding:.55rem .6rem;border-radius:8px;text-align:left}
+.reply-pop button:hover{background:var(--soft2)}
+#replybar{display:flex;align-items:center;gap:.45rem;border-top:1px solid var(--line);padding:.4rem .55rem;flex:none;background:var(--soft)}
+#replybar.hide{display:none}
+#replybar-body{flex:1;min-width:0}
 /* player de áudio da DM */
 .dm-audio{display:flex;align-items:center;gap:.55rem;width:230px;max-width:100%;padding:.1rem 0}
 .dm-audio .aplay{width:34px;height:34px;flex:none;border-radius:50%;background:var(--ink);color:var(--bg);display:grid;place-items:center;font-size:13px;line-height:1}
@@ -468,6 +486,8 @@ main{margin-left:72px}
 let token = localStorage.token, me, sock, peer = null, pendingPeer = null, view = 'home', G = [], SR = [], song = {}, au, stRaf = 0, stClock = null, stGi = null, stSid = null, sT;
 let panel = null, nfAll = [], nfFilter = 'all', unread = 0, muted = true, curTab = 'feed', lastProf = null, PD = {}, JL = null;
 let chatUsers = [], chatLoadId = 0, VCLR = {}, segAu = null;
+let replyTo = null;
+const msgMap = new Map();
 let PM = { file: null, orig: null, recrop: false };
 const PC = { img: null, url: '', ratioKey: 'orig', ratio: 1, x: 0, y: 0, zoom: 1 };
 const dmSrc = new Map(), dmAudios = new Map();
@@ -544,6 +564,7 @@ const IC = {
   smile: '<circle cx="12" cy="12" r="10"/><path d="M10 15c.4 0 .8-.1 1.2-.3l1.5-1.5c.6-.6 1.5-.6 2.1 0l1.5 1.5c.3.1.7.3 1.2.3"/><circle cx="9.5" cy="9.5" r="1.5"/><circle cx="14.5" cy="9.5" r="1.5"/>',
   download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>',
   lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+  chevdown: '<path d="M6 9l6 6 6-6"/>',
 };
 const I = (n, s = 24) => `<svg class="ic" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${IC[n]}</svg>`;
 const media = (p, full) => (p.type === 'video'
@@ -658,8 +679,8 @@ async function start() {
     if (view === 'chats' && $('cl')) loadChatList();
     else if (+m.to_id === me.id) { unread++; badges(); }
   });
-  sock.on('msg_edited', (m) => { updateMsgEl(m); if ($('cl')) loadChatList(); });
-  sock.on('msg_deleted', ({ id }) => { removeMsgEl(id); if ($('cl')) loadChatList(); });
+  sock.on('msg_edited', (m) => { if (msgMap.has(m.id)) msgMap.set(m.id, { ...msgMap.get(m.id), ...m }); updateMsgEl(m); if ($('cl')) loadChatList(); });
+  sock.on('msg_deleted', ({ id }) => { msgMap.delete(id); removeMsgEl(id); if ($('cl')) loadChatList(); });
   sock.on('story_view', ({ story_id }) => {
     const g = G.find((x) => x.items.some((i) => i.id === story_id));
     const it = g && g.items.find((i) => i.id === story_id);
@@ -1710,7 +1731,7 @@ async function openChat(id, name) {
   document.querySelectorAll('#cl .rq').forEach((b) => b.classList.toggle('on', +b.dataset.id === id));
   document.body.classList.add('chatopen');
   const chatEl = $('chat'); if (chatEl) chatEl.classList.add('room-open');
-  $('room').innerHTML = `<div class="rh"><button class="ib backbtn" onclick="go('chats')" aria-label="Voltar">${I('back', 20)}</button><span class="rhname" title="${esc(name)}">${name === 'Conversa' ? esc(name) : ul(name, esc(name))}</span><span class="rhactions"><button class="ib" onclick="togglePinChat(${id})" title="Fixar/desafixar conversa" aria-label="Fixar conversa">${I('shield', 16)}</button><button class="ib" onclick="deleteChat(${id})" title="Excluir conversa" aria-label="Excluir conversa">${I('x', 16)}</button></span></div><div id="msgs"></div><form id="send" onsubmit="sendMsg(event)"><input id="mt" placeholder="Mensagem... (Ctrl+V cola mídia)" autocomplete="off" title="Cole uma imagem, vídeo ou áudio com Ctrl+V"><button type="button" class="ib" onclick="pickDMFile()" title="Anexar foto ou vídeo" aria-label="Anexar mídia">${I('camera', 18)}</button><button type="button" class="ib" onclick="pickDMAudio()" title="Enviar áudio do dispositivo" aria-label="Enviar áudio">${I('music', 18)}</button><button type="button" class="ib" onclick="openEmojiPicker('mt')" title="Emoji" aria-label="Emoji">${I('smile', 18)}</button><button class="bl">Enviar</button></form>`;
+  $('room').innerHTML = `<div class="rh"><button class="ib backbtn" onclick="go('chats')" aria-label="Voltar">${I('back', 20)}</button><span class="rhname" title="${esc(name)}">${name === 'Conversa' ? esc(name) : ul(name, esc(name))}</span><span class="rhactions"><button class="ib" onclick="togglePinChat(${id})" title="Fixar/desafixar conversa" aria-label="Fixar conversa">${I('shield', 16)}</button><button class="ib" onclick="deleteChat(${id})" title="Excluir conversa" aria-label="Excluir conversa">${I('x', 16)}</button></span></div><div id="msgs"></div><div id="replybar" class="hide"><div id="replybar-body"></div><button type="button" class="ib" onclick="cancelReply()" aria-label="Cancelar resposta" title="Cancelar resposta">${I('x', 16)}</button></div><form id="send" onsubmit="sendMsg(event)"><input id="mt" placeholder="Mensagem... (Ctrl+V cola mídia)" autocomplete="off" title="Cole uma imagem, vídeo ou áudio com Ctrl+V"><button type="button" class="ib" onclick="pickDMFile()" title="Anexar foto ou vídeo" aria-label="Anexar mídia">${I('camera', 18)}</button><button type="button" class="ib" onclick="pickDMAudio()" title="Enviar áudio do dispositivo" aria-label="Enviar áudio">${I('music', 18)}</button><button type="button" class="ib" onclick="openEmojiPicker('mt')" title="Emoji" aria-label="Emoji">${I('smile', 18)}</button><button class="bl">Enviar</button></form>`;
   try {
     const msgs = await api('/api/messages/' + id);
     if (view !== 'chats' || !peer || peer.id !== id || req !== chatLoadId) return;
@@ -1724,6 +1745,7 @@ const miniPost = (p) => { P[p.id] = p; return `<div class="mp" onclick="openPost
 function addMsg(m) {
   const box = $('msgs'); if (!box) return;
   if (m.id != null && box.querySelector('[data-mid="' + m.id + '"]')) return; // idempotente: nunca duplica
+  if (m.id != null) msgMap.set(m.id, m);
   const d = document.createElement('div'); d.className = 'm' + (m.from_id === me.id ? ' me' : ''); d.dataset.mid = m.id; d.dataset.mtext = m.text || '';
   let mediaHtml = '';
   const own = m.from_id === me.id;
@@ -1750,8 +1772,9 @@ function addMsg(m) {
   d.style.boxShadow = 'none';
   d.style.padding = bare ? '0' : '';
   d.style.margin = bare ? '0' : '';
-  d.innerHTML = (m.post ? miniPost(m.post) : '') + mediaHtml + (m.text ? `<span>${linkify(esc(m.text))}${editedBadge}</span>` : '') +
-    (own ? `<div class="mtools"><button onclick="editMessage(${m.id},this)">Editar</button><button onclick="deleteMessage(${m.id})">Excluir</button></div>` : '');
+  d.innerHTML = (m.reply ? replyPreviewHtml(m.reply) : '') + (m.post ? miniPost(m.post) : '') + mediaHtml + (m.text ? `<span>${linkify(esc(m.text))}${editedBadge}</span>` : '') +
+    (own ? `<div class="mtools"><button onclick="editMessage(${m.id},this)">Editar</button><button onclick="deleteMessage(${m.id})">Excluir</button></div>` : '') +
+    `<button class="reply-toggle" type="button" onclick="toggleReplyMenu(${m.id},event)" aria-label="Opções da mensagem">${I('chevdown', 16)}</button>`;
   box.appendChild(d);
   box.scrollTop = box.scrollHeight;
   if (m.type === 'audio') setTimeout(() => dmAudioFor(m.id), 40);
@@ -1786,6 +1809,50 @@ function addMsg(m) {
     }
   }
 }
+// ---------- Menção de mensagem (Responder) ----------
+const replyAuthor = (m) => (m && m.from_id === me.id ? 'Você' : (peer && m.from_id === peer.id ? peer.name : 'Usuário'));
+const mediaThumbHtml = (m) => {
+  if (!m || !m.media) return '';
+  const isVid = /\.(mp4|webm|mov)$/i.test(m.media) || m.type === 'video';
+  return isVid
+    ? `<video src="${esc(m.media)}#t=0.1" muted preload="metadata" style="width:40px;height:40px;border-radius:6px;object-fit:cover;background:#000;flex:none"></video>`
+    : `<img src="${esc(m.media)}" alt="" style="width:40px;height:40px;border-radius:6px;object-fit:cover;background:#000;flex:none">`;
+};
+const replyText = (m) => {
+  if (!m) return '';
+  if (m.text) return String(m.text).slice(0, 160);
+  if (m.type === 'video') return '▶ Vídeo';
+  if (m.type === 'audio') return '♪ Nota de áudio';
+  if (m.type === 'song') return '🎵 Música';
+  if (m.media) return '[mídia]';
+  return '[mensagem excluída]';
+};
+const replyPreviewHtml = (m) => m ? `<div class="reply"><div class="reply-body"><b>${esc(replyAuthor(m))}</b><small>${esc(replyText(m))}</small></div>${mediaThumbHtml(m)}</div>` : '';
+function startReply(id) {
+  const m = msgMap.get(id); if (!m) return;
+  replyTo = m;
+  closeReplyPop();
+  const bar = $('replybar');
+  if (!bar) return;
+  bar.classList.remove('hide');
+  const bc = $('replybar-body'); if (bc) bc.innerHTML = replyPreviewHtml(m);
+  if ($('mt')) $('mt').focus();
+}
+function cancelReply() { replyTo = null; const bar = $('replybar'); if (!bar) return true; bar.classList.add('hide'); const bc = $('replybar-body'); if (bc) bc.innerHTML = ''; return true; }
+function closeReplyPop() { document.querySelectorAll('.reply-pop').forEach((p) => p.remove()); }
+function toggleReplyMenu(id, e) {
+  e.preventDefault(); e.stopPropagation();
+  closeReplyPop();
+  const bubble = document.querySelector('#msgs [data-mid="' + id + '"]');
+  if (!bubble) return;
+  const pop = document.createElement('div');
+  pop.className = 'reply-pop';
+  pop.dataset.id = id;
+  pop.innerHTML = `<button onclick="startReply(${id})">${I('back', 18)} Responder</button>`;
+  bubble.appendChild(pop);
+}
+document.addEventListener('mousedown', (e) => { if (!e.target.closest('.reply-pop')) closeReplyPop(); });
+
 // Atualiza uma mensagem já visível (útil para editar/excluir ao vivo)
 function updateMsgEl(m) {
   const el = document.querySelector('#msgs [data-mid="' + m.id + '"]');
@@ -1815,8 +1882,9 @@ function sendMsg(e) {
   if (!peer) return toast('Selecione uma conversa.');
   const t = $('mt').value.trim(); if (!t) return;
   if (!sock || !sock.connected) return toast('Sem conexão. Verifique sua internet.');
-  sock.emit('msg', { to: peer.id, text: t });
+  sock.emit('msg', { to: peer.id, text: t, reply_id: replyTo ? replyTo.id : null });
   $('mt').value = '';
+  cancelReply();
 }
 
 // ============ NOVAS FUNCIONALIDADES ============
@@ -1999,8 +2067,9 @@ async function sendDMMediaFile(file, opts) {
     try { d = await r.json(); } catch {}
     if (!r.ok || !d.url) throw new Error(d.error || 'Falha ao enviar mídia.');
     if (!sock || !sock.connected) throw new Error('Sem conexão. Verifique sua internet.');
-    sock.emit('msg', { to: chat.id, media: d.url, media_type: d.type });
+    sock.emit('msg', { to: chat.id, media: d.url, media_type: d.type, reply_id: replyTo ? replyTo.id : null });
     toast('Mídia enviada');
+    cancelReply();
     return true;
   } catch (err) { toast(err.message); return false; }
 }
@@ -2039,8 +2108,9 @@ async function pickDMAudio() {
       if (d.type !== 'audio') throw new Error('Escolha um arquivo de áudio.');
       if (!sock || !sock.connected) throw new Error('Sem conexão. Verifique sua internet.');
       const text = $('mt') ? $('mt').value.trim() : '';
-      sock.emit('msg', { to: chat.id, media: d.url, media_type: 'audio', text });
+      sock.emit('msg', { to: chat.id, media: d.url, media_type: 'audio', text, reply_id: replyTo ? replyTo.id : null });
       if ($('mt')) $('mt').value = '';
+      cancelReply();
       toast('Nota de áudio enviada');
     } catch (err) { toast(err.message); }
     finally { input.remove(); }

@@ -187,6 +187,7 @@ async function initDb() {
   await addCol('messages', 'type', 'TEXT DEFAULT \'\'');
   await addCol('messages', 'edited_at', 'BIGINT DEFAULT 0');
   await addCol('messages', 'deleted', 'INTEGER DEFAULT 0');
+  await addCol('messages', 'reply_id', 'INTEGER');
   await addCol('notifs', 'story_id', 'INTEGER');
   await addCol('notifs', 'text', "TEXT DEFAULT ''");
 
@@ -366,6 +367,18 @@ const userById = async (id) => {
     'SELECT id,username,name,bio,avatar,private,verified,verified_color,song_title,song_artist,song_url,song_art,song_start,song_dur,gif_avatar FROM users WHERE id=$1',
     [id]
   );
+};
+
+// Busca a mensagem citada numa DM. Se a original foi excluida, devolve um placeholder.
+const replyOf = async (replyId) => {
+  if (!replyId) return null;
+  const m = await get(
+    'SELECT m.id, m.from_id, m.to_id, m.text, m.media, m.type, m.deleted, u.username AS from_username FROM messages m JOIN users u ON u.id = m.from_id WHERE m.id = $1',
+    [+replyId]
+  );
+  if (!m) return null;
+  if (m.deleted) return { id: m.id, from_id: m.from_id, text: 'Mensagem excluída', media: null, type: '', deleted: 1, from_username: m.from_username };
+  return { ...m, deleted: 0 };
 };
 
 const rel = async (me, id) => {
@@ -875,6 +888,7 @@ app.get('/api/messages/:id', auth, async (req, res) => {
   for (const m of rows.reverse()) {
     let post = null;
     if (m.post_id) post = await getPost(m.post_id, me);
+    if (m.reply_id) m.reply = await replyOf(m.reply_id);
     mapped.push({ ...m, post });
   }
   res.json(mapped);
@@ -1144,17 +1158,23 @@ app.post('/api/dm/media', auth, up.single('media'), async (req, res) => {
 
 // ---------- DM note ----------
 app.post('/api/dm/note', auth, async (req, res) => {
-  const { to, text, song_preview, song_duration } = req.body || {};
+  const { to, text, song_preview, song_duration, reply_id } = req.body || {};
   if (!to) return res.status(400).json({ error: 'Destinatário necessário.' });
   if (!text && !song_preview) return res.status(400).json({ error: 'Envie uma nota ou música.' });
 
   const me = req.user.id;
   if (!await userById(to)) return res.status(404).json({ error: 'Usuário não encontrado.' });
+  reply_id = reply_id ? +reply_id : null;
+  if (reply_id) {
+    const rep = await get('SELECT from_id,to_id FROM messages WHERE id=$1', [reply_id]);
+    const same = rep && ((rep.from_id === me && rep.to_id === to) || (rep.from_id === to && rep.to_id === me));
+    if (!same) reply_id = null;
+  }
 
   const created = Date.now();
   const r = await run(
-    'INSERT INTO messages(from_id,to_id,text,media,type,created) VALUES($1,$2,$3,$4,$5,$6) RETURNING id',
-    [me, to, text || '', song_preview || '', song_preview ? 'song' : '', created]
+    'INSERT INTO messages(from_id,to_id,text,media,type,created,reply_id) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING id',
+    [me, to, text || '', song_preview || '', song_preview ? 'song' : '', created, reply_id]
   );
   const m = {
     id: Number(r.rows[0].id),
@@ -1163,7 +1183,9 @@ app.post('/api/dm/note', auth, async (req, res) => {
     text: text || '',
     media: song_preview || '',
     type: song_preview ? 'song' : '',
-    created
+    created,
+    reply_id,
+    reply: reply_id ? await replyOf(reply_id) : null
   };
   io.to('u' + to).to('u' + me).emit('msg', m);
   res.json({ ok: true, message: m });
@@ -1219,19 +1241,27 @@ io.use((s, next) => {
 io.on('connection', (s) => {
   s.join('u' + s.user.id);
 
-  s.on('msg', async ({ to, text, post_id, media, media_type }) => {
+  s.on('msg', async ({ to, text, post_id, media, media_type, reply_id }) => {
     text = String(text || '').trim().slice(0, 1000);
     post_id = post_id ? +post_id : null;
     media = media || '';
     media_type = media_type || '';
+    reply_id = reply_id ? +reply_id : null;
 
     if ((!text && !post_id && !media) || !await userById(to)) return;
     if (post_id && !(await getPost(post_id, s.user.id))) return;
 
+    // Só permite citar uma mensagem desta mesma conversa
+    if (reply_id) {
+      const rep = await get('SELECT from_id,to_id FROM messages WHERE id=$1', [reply_id]);
+      const same = rep && ((rep.from_id === s.user.id && rep.to_id === to) || (rep.from_id === to && rep.to_id === s.user.id));
+      if (!same) reply_id = null;
+    }
+
     const created = Date.now();
     const r = await run(
-      'INSERT INTO messages(from_id,to_id,text,post_id,media,type,created) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING id',
-      [s.user.id, to, text, post_id, media, media_type, created]
+      'INSERT INTO messages(from_id,to_id,text,post_id,media,type,created,reply_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id',
+      [s.user.id, to, text, post_id, media, media_type, created, reply_id]
     );
     const m = {
       id: Number(r.rows[0].id),
@@ -1241,7 +1271,9 @@ io.on('connection', (s) => {
       post_id,
       media,
       type: media_type,
-      created
+      created,
+      reply_id,
+      reply: reply_id ? await replyOf(reply_id) : null
     };
     io.to('u' + to).to('u' + s.user.id).emit('msg', m);
   });
