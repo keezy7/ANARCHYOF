@@ -41,6 +41,9 @@ textarea{resize:vertical;min-height:70px;margin:.5rem 0}
 .row{display:flex;gap:.5rem;align-items:center}
 .av{border-radius:50%;object-fit:cover;background:var(--soft);display:inline-grid;place-items:center;font-weight:700;flex:none}
 .vf{display:inline-grid;place-items:center;width:15px;height:15px;border-radius:50%;background:var(--blue);color:#fff;font-size:10px;margin-left:4px;vertical-align:middle}
+/* selo verificado sobre vídeo (reel/post/grid) */
+.vfvid{position:absolute;right:8px;bottom:8px;z-index:3;display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:rgba(0,0,0,.75);color:#fff;font-size:12px;box-shadow:0 1px 4px rgba(0,0,0,.45)}
+.vfvid svg{width:14px;height:14px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .ic{display:block;flex:none}
 .ib{width:34px;height:34px;display:grid;place-items:center;border-radius:50%}.ib:hover{background:var(--soft)}
 
@@ -139,6 +142,7 @@ main{margin-left:72px}
 .ph b,.ph a{cursor:pointer}.ph .who{flex:1;min-width:0}.ph .who small{margin-left:2px}
 .mo{width:32px;height:32px;border-radius:50%;display:grid;place-items:center}.mo:hover{background:var(--soft)}
 .pm{position:relative;border-radius:6px;overflow:hidden;background:#000}
+.pmv{position:relative;border-radius:6px;overflow:hidden;background:#000}
 .pm img,.pm video{width:100%;display:block;max-height:640px;object-fit:cover}
 .mute{position:absolute;right:12px;bottom:12px;width:32px;height:32px;border-radius:50%;background:rgba(0,0,0,.6);display:grid;place-items:center;color:#fff;z-index:2}
 .bh{position:absolute;left:50%;top:50%;color:#fff;pointer-events:none;animation:burst .8s var(--ease) forwards;filter:drop-shadow(0 4px 16px rgba(0,0,0,.5));z-index:3}
@@ -582,9 +586,12 @@ const IC = {
   chevdown: '<path d="M6 9l6 6 6-6"/>',
 };
 const I = (n, s = 24) => `<svg class="ic" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${IC[n]}</svg>`;
-const media = (p, full) => (p.type === 'video'
-  ? `<video src="${p.media}" ${full ? 'controls' : 'loop muted data-auto="feed" onclick="togglePlay(this)" onplay="vpPlay(this)" onpause="vpPause(this)"'} playsinline preload="metadata"></video>${full ? '' : `<div class="pp">${I('play', 34)}</div>${volCtl('feed')}`}`
-  : `<img src="${p.media}" alt="">`);
+const media = (p, full) => {
+  if (p.type !== 'video') return `<img src="${p.media}" alt="">`;
+  const vf = p.verified ? `<div class="vfvid" style="background:${esc(p.verified_color || '#ff2d2d')}"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9 9 9 0 0 0-9-9Z"/><path d="m7.5 12 2 2 4-4"/><path d="M12 17a5 5 0 0 1-5-5"/></svg></div>` : '';
+  const extra = full ? '' : `<div class="pp">${I('play', 34)}</div>${volCtl('feed')}`;
+  return `<div class="pmv"><video src="${p.media}" ${full ? 'controls' : 'loop muted data-auto="feed" onclick="togglePlay(this)" onplay="vpPlay(this)" onpause="vpPause(this)"'} playsinline preload="metadata"></video>${extra}${vf}</div>`;
+};
 
 async function api(url, o = {}) {
   o.headers = { ...(o.headers || {}), Authorization: 'Bearer ' + token };
@@ -1487,7 +1494,7 @@ function openStory(gi, si = 0) {
 }
 
 /* ---------- Explorar / Pesquisa ---------- */
-const gridItem = (p, i, tall) => { P[p.id] = p; return `<div class="gi ${tall ? 'tall' : ''}" style="--i:${i}" onclick="openPost(${p.id})">${p.type === 'video' ? `<video src="${p.media}#t=0.1" preload="metadata" muted></video><i>${I('play', 20)}</i>` : `<img src="${p.media}" loading="lazy" alt="">`}${p.repost_of ? `<i>${I('repost', 20)}</i>` : ''}
+const gridItem = (p, i, tall) => { P[p.id] = p; const gvf = p.verified ? `<div class="vfvid" style="position:absolute;right:8px;bottom:8px;z-index:3;display:grid;place-items:center;width:20px;height:20px;border-radius:50%;background:${esc(p.verified_color || '#ff2d2d')}"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 9 9 9 9 0 0 0-9-9Z"/><path d="m7.5 12 2 2 4-4"/><path d="M12 17a5 5 0 0 1-5-5"/></svg></div>` : ''; return `<div class="gi ${tall ? 'tall' : ''}" style="--i:${i};position:relative" onclick="openPost(${p.id})">${p.type === 'video' ? `<video src="${p.media}#t=0.1" preload="metadata" muted></video><i>${I('play', 20)}</i>` : `<img src="${p.media}" loading="lazy" alt="">`}${p.repost_of ? `<i>${I('repost', 20)}</i>` : ''}${gvf}
   <div class="ov2"><span>${I('heart', 20)}${p.likes}</span><span>${I('comment', 20)}${p.ncomments}</span></div></div>`; };
 async function explore() {
   $('view').innerHTML = '<div class="prof"><h2 style="margin:0 0 1rem">Explorar</h2><div class="grid stg" id="eg"></div></div>';
