@@ -186,6 +186,14 @@ const pool = new Pool({
       console.error('[migração] gif_avatar:', e.message);
     }
 
+    // Garante que apenas as contas autorizadas tenham verificado (remove de todas as outras).
+    try {
+      const allowed = ['anarchy', 'scorppionn', 'horuswrld'];
+      await pool.query('UPDATE users SET verified=0 WHERE verified <> 0 AND LOWER(username) <> ALL($1)', [allowed]);
+    } catch (e) {
+      console.error('[migração] verified:', e.message);
+    }
+
     // Migração: timestamps em milissegundos (Date.now()) não cabem em INTEGER (32 bits).
     // Necessário em bancos que já existiam antes da correção para BIGINT.
     const bigintCols = [

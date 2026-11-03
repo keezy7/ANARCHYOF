@@ -18,6 +18,12 @@ const GIF_AVATAR_USERS = new Set(
     .map((s) => s.trim().toLowerCase().replace(/^@/, ''))
     .filter(Boolean)
 );
+const VERIFIED_USERS = new Set(
+  (process.env.VERIFIED_USERS || 'anarchy,scorppionn,horuswrld')
+    .split(',')
+    .map((s) => s.trim().toLowerCase().replace(/^@/, ''))
+    .filter(Boolean)
+);
 fs.mkdirSync(path.join(__dirname, 'uploads'), { recursive: true });
 
 const run = async (text, params = []) => pool.query(text, params);
@@ -215,6 +221,14 @@ async function initDb() {
     console.error('[migração] gif_avatar:', e.message);
   }
 
+  // Garante que apenas as contas autorizadas tenham verificado (remove de todas as outras).
+  try {
+    const allowed = [...VERIFIED_USERS];
+    await pool.query('UPDATE users SET verified=0 WHERE verified <> 0 AND LOWER(username) <> ALL($1)', [allowed]);
+  } catch (e) {
+    console.error('[migração] verified:', e.message);
+  }
+
   // Migração: timestamps em milissegundos (Date.now()) não cabem em INTEGER (32 bits).
   // CREATE TABLE IF NOT EXISTS não altera tabelas que já existem, então é preciso
   // converter as colunas em bancos antigos. ALTER COLUMN TYPE é idempotente.
@@ -310,7 +324,11 @@ const isValidGif = (f) => {
   } catch { return false; }
 };
 const cleanupUpload = (f) => { try { if (f && f.path) fs.unlinkSync(f.path); } catch {} };
-const withPerms = (u) => (u ? { ...u, gif_avatar: Number(u.gif_avatar) || 0 } : u);
+const withPerms = (u) => (u ? {
+  ...u,
+  gif_avatar: Number(u.gif_avatar) || 0,
+  verified_allowed: VERIFIED_USERS.has(String(u.username || '').toLowerCase()) ? 1 : 0
+} : u);
 
 const up = multer({
   storage: multer.diskStorage({
@@ -466,9 +484,13 @@ app.put('/api/me', auth, up.single('avatar'), async (req, res) => {
 });
 
 app.post('/api/verify', auth, async (req, res) => {
-  await run('UPDATE users SET verified=1-verified WHERE id=$1', [req.user.id]);
   const u = await userById(req.user.id);
-  res.json(withPerms(u));
+  if (!u || !VERIFIED_USERS.has(String(u.username || '').toLowerCase())) {
+    return res.status(403).json({ error: 'O selo verificado é exclusivo de @anarchy, @scorppionn e @horuswrld.' });
+  }
+  await run('UPDATE users SET verified=1-verified WHERE id=$1', [req.user.id]);
+  const v = await userById(req.user.id);
+  res.json(withPerms(v));
 });
 
 app.get('/api/badge-colors', auth, async (req, res) => {

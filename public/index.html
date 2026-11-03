@@ -767,7 +767,7 @@ function toggleMore(e) {
   closePanel(true);
   const d = document.createElement('div'); d.id = 'more';
   d.innerHTML = `<button onclick="go('explore')">${I('compass', 22)}Explorar</button>
-    <button onclick="verify();closeMore()">${I('shield', 22)}${me.verified ? 'Cancelar Verificado' : 'Obter Verificado grátis'}</button>
+    ${me.verified_allowed ? `<button onclick="verify();closeMore()">${I('shield', 22)}${me.verified ? 'Cancelar Verificado' : 'Obter Verificado grátis'}</button>` : ''}
     <button onclick="logout()">${I('logout', 22)}Sair</button>`;
   document.body.appendChild(d);
 }
@@ -1588,7 +1588,7 @@ ${me.gif_avatar ? '<small style="color:var(--mute)">Sua conta pode usar GIF anim
   <div id="sgw"></div>
   <label>Cor do selo verificado</label><div class="row"><input type="color" id="evc" value="${vc}" aria-label="Cor do selo verificado"><button class="gh" onclick="$('evc').value='#ff2d2d'">Padrão</button><small>Só aparece para quem tem o selo.</small></div>
   <label class="chk"><input type="checkbox" id="ep" ${me.private ? 'checked' : ''}> Conta privada</label>
-  <div class="row" style="margin-top:.8rem;flex-wrap:wrap"><button class="bl" onclick="saveProfile()">Salvar</button><button class="gh" onclick="verify()">${me.verified ? 'Cancelar Verificado' : 'Obter Verificado grátis'}</button><button class="gh" onclick="deactivateAccount()" style="color:#ff4d4d">Desativar Conta</button><button class="gh rd" onclick="deleteAccount()" style="color:#ff2d2d">Excluir Conta</button><button class="gh" style="margin-left:auto" onclick="logout()">Sair</button></div><p class="err" id="ee"></p>`);
+  <div class="row" style="margin-top:.8rem;flex-wrap:wrap"><button class="bl" onclick="saveProfile()">Salvar</button>${me.verified_allowed ? `<button class="gh" onclick="verify()">${me.verified ? 'Cancelar Verificado' : 'Obter Verificado grátis'}</button>` : ''}<button class="gh" onclick="deactivateAccount()" style="color:#ff4d4d">Desativar Conta</button><button class="gh rd" onclick="deleteAccount()" style="color:#ff2d2d">Excluir Conta</button><button class="gh" style="margin-left:auto" onclick="logout()">Sair</button></div><p class="err" id="ee"></p>`);
   initSegEditor();
 }
 async function findSong() {
