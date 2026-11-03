@@ -153,6 +153,8 @@ const pool = new Pool({
     await addCol('posts', 'pinned', 'INTEGER DEFAULT 0');
     await addCol('comments', 'edited_at', 'BIGINT DEFAULT 0');
     await addCol('comments', 'deleted', 'INTEGER DEFAULT 0');
+    await addCol('comments', 'parent_id', 'INTEGER DEFAULT NULL');
+    try { await pool.query('CREATE INDEX IF NOT EXISTS idx_comments_parent ON comments(parent_id)'); } catch {}
     await addCol('stories', 'expires_at', 'BIGINT DEFAULT 0');
     await addCol('stories', 'mentions', "TEXT DEFAULT ''");
     await addCol('messages', 'media', 'TEXT DEFAULT \'\'');

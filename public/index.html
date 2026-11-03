@@ -148,6 +148,20 @@ main{margin-left:72px}
 .sci{flex:1;min-width:0;padding:.65rem 1rem;border-radius:999px;border:1px solid rgba(255,255,255,.35);background:rgba(10,14,20,.55);color:#fff;backdrop-filter:blur(6px)}.sci::placeholder{color:rgba(255,255,255,.7)}.sci:focus{border-color:#fff;box-shadow:none}
 .sl.on svg{fill:var(--red);stroke:var(--red)}.ab.lk.pop svg{animation:heart .45s var(--ease)}
 .pb p{margin:.2rem 0}.pb .pl{font-weight:700}.pb input{border:0;background:none;padding:.5rem 0;box-shadow:none}
+/* comentários aninhados */
+.cc{display:flex;flex-direction:column;gap:.15rem;margin:.4rem 0}
+.cc.cr{padding-left:1.1rem;border-left:1px solid var(--line);margin-left:.7rem}
+.cc p{display:flex;align-items:center;gap:.35rem;flex-wrap:wrap;margin:0;font-size:.85rem}
+.cc.cr p{font-size:.82rem}
+.cc .ct{flex:1;min-width:0;word-break:break-word}
+.cact{display:flex;align-items:center;gap:.8rem;margin-top:.15rem}
+.cmt-reply,.cmt-verres{color:var(--mute);font-weight:600;font-size:.75rem;padding:.15rem 0;background:transparent}
+.cmt-reply:hover,.cmt-verres:hover{color:var(--ink)}
+.cmt-verres:disabled{opacity:.5;cursor:default}
+.cmt-reply-hint{display:flex;justify-content:space-between;align-items:center;gap:.5rem;padding:.25rem .5rem .25rem .5rem;color:var(--mute);font-size:.78rem;background:var(--soft);border-radius:10px;margin-bottom:.3rem}
+.cmt-reply-hint b{color:var(--ink)}
+.ccr{display:none}
+.ccr.open{display:block}
 .pb .more{color:var(--mute);cursor:pointer;display:inline-block;margin:.1rem 0}
 .tg a{color:var(--link);cursor:pointer;margin-right:.35rem}
 .ro{color:var(--mute);font-size:.8rem}
@@ -786,7 +800,7 @@ document.addEventListener('keydown', (e) => {
 });
 
 /* ---------- notificações ---------- */
-const NT = { follow: 'começou a seguir você.', request: 'pediu para seguir você.', like: 'curtiu sua publicação.', comment: 'comentou na sua publicação.', repost: 'republicou sua publicação.', tag: 'marcou você em uma publicação.', mention: 'mencionou você em um comentário.', story_mention: 'mencionou você em um story.', story_reply: 'respondeu ao seu story.' };
+const NT = { follow: 'começou a seguir você.', request: 'pediu para seguir você.', like: 'curtiu sua publicação.', comment: 'comentou na sua publicação.', reply: 'respondeu a um comentário seu.', repost: 'republicou sua publicação.', tag: 'marcou você em uma publicação.', mention: 'mencionou você em um comentário.', story_mention: 'mencionou você em um story.', story_reply: 'respondeu ao seu story.' };
 const NF = { all: ['Tudo', null], follow: ['Seguidores', ['follow', 'request']], like: ['Curtidas', ['like']], comment: ['Comentários', ['comment', 'mention']], tag: ['Marcações', ['tag', 'repost', 'story_mention']] };
 async function loadNotifs(first) {
   try { nfAll = await api('/api/notifs'); } catch { return; }
@@ -1054,6 +1068,60 @@ function resumeBehind() { if ($('m')) return; pausedByModal.forEach((v) => { if 
 function openPost(id, focus) { pauseBehind(); modal(postDetail(P[id]), 'wide'); watch(); if (focus) setTimeout(() => { const i = document.querySelector('#m .pin input'); if (i) i.focus(); }, 300); }
 
 /* ---------- Posts ---------- */
+/* respostas em comentários */
+let cmReply = null;
+function cancelCmtReply() {
+  cmReply = null;
+  document.querySelectorAll('.cmt-reply-hint').forEach((x) => x.remove());
+  document.querySelectorAll('.pin input, .pb input').forEach((i) => { i.placeholder = 'Adicione um comentário...'; });
+}
+function startCmtReply(pid, cid, username, btn) {
+  const root = btn && btn.closest ? btn.closest('.post, .pdet') : null;
+  if (!root) return;
+  const inp = root.querySelector('.pin input, .pb input');
+  if (!inp) return;
+  const old = root.querySelector('.cmt-reply-hint'); if (old) old.remove();
+  cmReply = { post_id: pid, comment_id: cid, username };
+  const hint = document.createElement('div');
+  hint.className = 'cmt-reply-hint';
+  hint.innerHTML = `<span>Respondendo a <b>@${esc(username)}</b></span><button type="button" class="ib" onclick="cancelCmtReply()" aria-label="Cancelar resposta" title="Cancelar resposta">${I('x', 16)}</button>`;
+  inp.parentNode.insertBefore(hint, inp);
+  inp.placeholder = 'Responder a @' + username + '…';
+  inp.focus();
+}
+async function toggleCmtReplies(btn, pid) {
+  const cc = btn && btn.closest('.cc'); if (!cc || !pid) return;
+  const container = cc.querySelector('.ccr'); if (!container) return;
+  const n = Number((btn.textContent.match(/\d+/) || [0])[0]);
+  if (container.classList.contains('open')) {
+    container.classList.remove('open');
+    container.innerHTML = '';
+    btn.textContent = '— Ver respostas (' + n + ')';
+    return;
+  }
+  btn.disabled = true;
+  const prev = btn.textContent;
+  btn.textContent = 'Carregando…';
+  try {
+    const replies = await api('/api/comments/' + (+cc.dataset.cid) + '/replies');
+    const post = P[pid] || { id: pid };
+    container.innerHTML = replies.map((r) => commentBlock(post, r, true)).join('');
+    container.classList.add('open');
+    btn.textContent = '— Ocultar respostas (' + replies.length + ')';
+  } catch (e) { btn.textContent = prev; toast(e.message); }
+  finally { btn.disabled = false; }
+}
+
+/* comentários aninhados */
+const commentBlock = (p, c, isReply) => {
+  const ver = (c.edited_at ? ' <small class="ed" style="color:var(--mute)">editado</small>' : '');
+  const actionBtn = `<button type="button" class="lnk cmt-reply" onclick="startCmtReply(${p.id},${c.id},'${esc(c.username)}',this)">Responder</button>`;
+  const editDel = c.user_id === me.id ? `<button class="gh" onclick="editComment(${p.id},${c.id},this)" style="font-size:.7rem;padding:.15rem .5rem;border-radius:6px;margin-left:.4rem">Editar</button><button class="gh" onclick="deleteComment(${p.id},${c.id})" style="font-size:.7rem;padding:.15rem .5rem;border-radius:6px;margin-left:.3rem">Excluir</button>` : '';
+  const nreplies = Number(c.nreplies) || 0;
+  const verRes = !isReply && nreplies ? `<button type="button" class="lnk cmt-verres" onclick="toggleCmtReplies(this,${p.id})">— Ver respostas (${nreplies})</button>` : '';
+  return `<div class="cc${isReply ? ' cr' : ''}" data-cid="${c.id}"><p>${ul(c.username, `<b>${esc(c.username)}</b>`)}${vf(c.verified,c.username,c.verified_color)} <span class="ct">${linkify(esc(c.text))}</span>${ver}${editDel}</p><div class="cact">${actionBtn}${verRes}</div>${isReply ? '' : `<div class="ccr" data-cr="${c.id}"></div>`}</div>`;
+};
+
 const acts = (p) => `<button class="ab lk ${p.liked ? 'on' : ''} ${JL === p.id ? 'pop' : ''}" onclick="like(${p.id})" title="Curtir">${I('heart', 26)}${p.likes ? `<span>${p.likes}</span>` : ''}</button>
   <button class="ab" onclick="cmtBtn(${p.id},this)" title="Comentar">${I('comment', 25)}${p.ncomments ? `<span>${p.ncomments}</span>` : ''}</button>
   <button class="ab" onclick="repost(${p.id})" title="Republicar">${I('repost', 25)}${p.reposts ? `<span>${p.reposts}</span>` : ''}</button>
@@ -1063,8 +1131,7 @@ const tagsLine = (p) => (p.tags && p.tags.length ? `<p class="tg"><small>com</sm
 const cmts = (p, full) => {
   const list = full ? p.comments : p.comments.slice(-2);
   return (!full && p.ncomments > 2 ? `<span class="more" onclick="openPost(${p.id})">Ver todos os ${p.ncomments} comentários</span>` : '')
-    + list.map((c) => `<p data-cid="${c.id}">${ul(c.username, `<b>${esc(c.username)}</b>`)}${vf(c.verified,c.username,c.verified_color)} <span class="ct">${linkify(esc(c.text))}</span>${c.edited_at ? ' <small class="ed" style="color:var(--mute)">editado</small>' : ''}
-      ${c.user_id === me.id ? `<button class="gh" onclick="editComment(${p.id},${c.id},this)" style="font-size:.7rem;padding:.15rem .5rem;border-radius:6px;margin-left:.4rem">Editar</button><button class="gh" onclick="deleteComment(${p.id},${c.id})" style="font-size:.7rem;padding:.15rem .5rem;border-radius:6px;margin-left:.3rem">Excluir</button>` : ''}</p>`).join('');
+    + list.map((c) => commentBlock(p, c, false)).join('');
 };
 function postCard(p, i = 0) {
   P[p.id] = p;
@@ -1107,7 +1174,15 @@ function dbl(id, el) {
   el.appendChild(h); setTimeout(() => h.remove(), 800);
 }
 function cmtBtn(id, b) { if (b.closest('.pdet')) b.closest('.pdr').querySelector('.pin input').focus(); else openPost(id, true); }
-async function cmt(id, el) { const t = el.value; if (!t.trim()) return; el.value = ''; await api(`/api/posts/${id}/comments`, { json: { text: t } }); reload(id); }
+async function cmt(id, el) {
+  const t = el.value; if (!t.trim()) return;
+  const parent = cmReply && cmReply.post_id === id ? cmReply.comment_id : null;
+  el.value = '';
+  cancelCmtReply();
+  if (parent) await api('/api/comments/' + parent + '/reply', { method: 'POST', json: { text: t } });
+  else await api('/api/posts/' + id + '/comments', { method: 'POST', json: { text: t } });
+  reload(id);
+}
 async function repost(id) { try { await api(`/api/posts/${id}/repost`, { method: 'POST' }); toast('Republicado no seu perfil'); reload(id); } catch (e) { toast(e.message); } }
 function postMenu(id) {
   const p = P[id];
@@ -1926,11 +2001,11 @@ function inlineEdit(textEl, current, save, cancel, line = 'var(--blue)') {
   return inp;
 }
 function editComment(pid, cid, btn) {
-  const p = P[pid]; const c = p && p.comments && p.comments.find((x) => x.id === cid);
-  const row = btn && btn.closest('p'); if (!c || !row || row.querySelector('input')) return;
+  const row = btn && btn.closest('.cc'); if (!row) return;
+  const span = row.querySelector('.ct'); if (!span || row.querySelector('input')) return;
   const hide = row.querySelectorAll('button, .ed'); hide.forEach((e) => { e.style.display = 'none'; });
-  const restore = () => { row.querySelector('input')?.remove(); row.querySelector('.ct').style.display = ''; hide.forEach((e) => { e.style.display = ''; }); };
-  inlineEdit(row.querySelector('.ct'), c.text, async (t) => {
+  const restore = () => { row.querySelector('input')?.remove(); span.style.display = ''; hide.forEach((e) => { e.style.display = ''; }); };
+  inlineEdit(span, span.textContent.trim(), async (t) => {
     try { await api(`/api/comments/${cid}`, { method: 'PUT', json: { text: t } }); toast('Comentário editado'); reload(pid); } catch (e) { toast(e.message); restore(); }
   }, restore);
 }

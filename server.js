@@ -187,6 +187,8 @@ async function initDb() {
   await addCol('posts', 'pinned', 'INTEGER DEFAULT 0');
   await addCol('comments', 'edited_at', 'BIGINT DEFAULT 0');
   await addCol('comments', 'deleted', 'INTEGER DEFAULT 0');
+  await addCol('comments', 'parent_id', 'INTEGER DEFAULT NULL');
+  try { await pool.query('CREATE INDEX IF NOT EXISTS idx_comments_parent ON comments(parent_id)'); } catch {}
   await addCol('stories', 'expires_at', 'BIGINT DEFAULT 0');
   await addCol('stories', 'mentions', "TEXT DEFAULT ''");
   await addCol('messages', 'media', 'TEXT DEFAULT \'\'');
@@ -511,7 +513,11 @@ const fin = async (rows, me) => {
   const out = [];
   for (const p of rows) {
     const tags = await all('SELECT u.username FROM tags t JOIN users u ON u.id=t.user_id WHERE t.post_id=$1 ORDER BY u.username', [p.id]);
-    const comments = await all('SELECT c.id,c.text,u.username,u.verified,u.verified_color,c.user_id,c.edited_at,c.deleted FROM comments c JOIN users u ON u.id=c.user_id WHERE c.post_id=$1 AND c.deleted=0 ORDER BY c.id DESC LIMIT 20', [p.id]);
+    const comments = await all(`SELECT c.id,c.text,u.username,u.verified,u.verified_color,c.user_id,c.edited_at,c.deleted,c.parent_id,
+      (SELECT COUNT(*) FROM comments r WHERE r.parent_id=c.id AND r.deleted=0) AS nreplies
+      FROM comments c JOIN users u ON u.id=c.user_id
+      WHERE c.post_id=$1 AND c.deleted=0 AND c.parent_id IS NULL
+      ORDER BY c.id DESC LIMIT 20`, [p.id]);
     out.push({
       ...p, liked: !!p.liked,
       tags: tags.map((x) => x.username),
@@ -825,10 +831,48 @@ app.put('/api/comments/:id', auth, async (req, res) => {
 app.delete('/api/comments/:id', auth, async (req, res) => {
   const id = +req.params.id;
   const me = req.user.id;
-  const c = await get('SELECT user_id FROM comments WHERE id=$1', [id]);
+  const c = await get('SELECT user_id,parent_id FROM comments WHERE id=$1', [id]);
   if (!c || c.user_id !== me) return res.status(403).json({ error: 'Não autorizado.' });
 
+  // Exclui o comentário e, caso seja comentário-raiz, também as respostas
+  if (!c.parent_id) await run('UPDATE comments SET deleted=1 WHERE parent_id=$1', [id]);
   await run('UPDATE comments SET deleted=1 WHERE id=$1', [id]);
+  res.json({ ok: true });
+});
+
+// ---------- Respostas a comentário ----------
+app.get('/api/comments/:id/replies', auth, async (req, res) => {
+  const id = +req.params.id;
+  const target = await get('SELECT parent_id FROM comments WHERE id=$1', [id]);
+  if (!target) return res.status(404).json({ error: 'Comentário não encontrado.' });
+
+  const rootId = target.parent_id || id;
+  const rows = await all(`SELECT c.id,c.text,u.username,u.verified,u.verified_color,c.user_id,c.edited_at,c.deleted
+    FROM comments c JOIN users u ON u.id=c.user_id
+    WHERE c.parent_id=$1 AND c.deleted=0 ORDER BY c.id ASC LIMIT 50`, [rootId]);
+  res.json(rows);
+});
+
+app.post('/api/comments/:id/reply', auth, async (req, res) => {
+  const id = +req.params.id;
+  const me = req.user.id;
+  const t = (req.body.text || '').trim().slice(0, 300);
+  if (!t) return res.status(400).json({ error: 'Resposta vazia.' });
+
+  const target = await get('SELECT id,post_id,user_id,parent_id FROM comments WHERE id=$1 AND deleted=0', [id]);
+  if (!target) return res.status(404).json({ error: 'Comentário não encontrado.' });
+
+  const rootId = target.parent_id || target.id;
+  await run('INSERT INTO comments(post_id,user_id,text,created,parent_id) VALUES($1,$2,$3,$4,$5) RETURNING id',
+    [target.post_id, me, t, Date.now(), rootId]);
+
+  const owner = await get('SELECT user_id FROM posts WHERE id=$1', [target.post_id]);
+  const ment = await mentionIds(t, me);
+
+  if (!ment.includes(target.user_id)) await notify(target.user_id, me, 'reply', target.post_id, t);
+  if (owner && owner.user_id !== me && owner.user_id !== target.user_id) await notify(owner.user_id, me, 'reply', target.post_id, t);
+  for (const uid of ment) if (uid !== target.user_id) await notify(uid, me, 'mention', target.post_id, t);
+
   res.json({ ok: true });
 });
 
