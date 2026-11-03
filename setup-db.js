@@ -196,6 +196,16 @@ const pool = new Pool({
       console.error('[migração] verified:', e.message);
     }
 
+    // Remove reposts duplicados do mesmo post pelo mesmo usuário (mantém o mais recente) e impede duplicação.
+    try {
+      await pool.query(`UPDATE posts AS a SET deleted=1 FROM posts AS b
+        WHERE a.user_id=b.user_id AND a.repost_of IS NOT NULL AND b.repost_of IS NOT NULL
+          AND a.repost_of=b.repost_of AND a.deleted=0 AND b.deleted=0 AND a.id<b.id`);
+      await pool.query('CREATE UNIQUE INDEX IF NOT EXISTS idx_posts_repost_unique ON posts(user_id, repost_of) WHERE repost_of IS NOT NULL AND deleted=0');
+    } catch (e) {
+      console.error('[migração] posts repost:', e.message);
+    }
+
     // Migração: timestamps em milissegundos (Date.now()) não cabem em INTEGER (32 bits).
     // Necessário em bancos que já existiam antes da correção para BIGINT.
     const bigintCols = [

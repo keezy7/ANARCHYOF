@@ -231,6 +231,16 @@ async function initDb() {
     console.error('[migração] verified:', e.message);
   }
 
+  // Remove reposts duplicados do mesmo post pelo mesmo usuário (mantém o mais recente) e impede duplicação.
+  try {
+    await pool.query(`UPDATE posts AS a SET deleted=1 FROM posts AS b
+      WHERE a.user_id=b.user_id AND a.repost_of IS NOT NULL AND b.repost_of IS NOT NULL
+        AND a.repost_of=b.repost_of AND a.deleted=0 AND b.deleted=0 AND a.id<b.id`);
+    await pool.query('CREATE UNIQUE INDEX IF NOT EXISTS idx_posts_repost_unique ON posts(user_id, repost_of) WHERE repost_of IS NOT NULL AND deleted=0');
+  } catch (e) {
+    console.error('[migração] posts repost:', e.message);
+  }
+
   // Migração: timestamps em milissegundos (Date.now()) não cabem em INTEGER (32 bits).
   // CREATE TABLE IF NOT EXISTS não altera tabelas que já existem, então é preciso
   // converter as colunas em bancos antigos. ALTER COLUMN TYPE é idempotente.
@@ -504,10 +514,11 @@ const POST = `SELECT p.id,p.caption,p.media,p.type,p.created,p.user_id,p.repost_
  (SELECT COUNT(*) FROM likes WHERE post_id=p.id) AS likes,
  (SELECT COUNT(*) FROM comments WHERE post_id=p.id AND deleted=0) AS ncomments,
  (SELECT COUNT(*) FROM posts r WHERE r.repost_of=COALESCE(p.repost_of,p.id) AND r.deleted=0) AS reposts,
- EXISTS(SELECT 1 FROM likes WHERE post_id=p.id AND user_id=$1) AS liked
+ EXISTS(SELECT 1 FROM likes WHERE post_id=p.id AND user_id=$1) AS liked,
+ EXISTS(SELECT 1 FROM posts r WHERE r.user_id=$1 AND r.repost_of=COALESCE(p.repost_of,p.id) AND r.deleted=0) AS reposted
  FROM posts p JOIN users u ON u.id=p.user_id
  LEFT JOIN posts o ON o.id=p.repost_of LEFT JOIN users ou ON ou.id=o.user_id
- WHERE p.deleted=0`;
+ WHERE p.deleted=0 AND (p.repost_of IS NULL OR EXISTS (SELECT 1 FROM posts po WHERE po.id=p.repost_of AND po.deleted=0))`;
 
 const fin = async (rows, me) => {
   const out = [];
@@ -519,7 +530,7 @@ const fin = async (rows, me) => {
       WHERE c.post_id=$1 AND c.deleted=0 AND c.parent_id IS NULL
       ORDER BY c.id DESC LIMIT 20`, [p.id]);
     out.push({
-      ...p, liked: !!p.liked,
+      ...p, liked: !!p.liked, reposted: !!p.reposted,
       tags: tags.map((x) => x.username),
       comments: comments.reverse()
     });
@@ -597,7 +608,7 @@ app.get('/api/u/:name', auth, async (req, res) => {
   const ok = await canSee(me, u);
   const r = await rel(me, u.id);
 
-  const countPosts = await num('SELECT COUNT(*) n FROM posts WHERE user_id=$1 AND deleted=0', [u.id]);
+  const countPosts = await num('SELECT COUNT(*) n FROM posts WHERE user_id=$1 AND deleted=0 AND (repost_of IS NULL OR EXISTS (SELECT 1 FROM posts r WHERE r.id=repost_of AND r.deleted=0))', [u.id]);
   const countFollowers = await num("SELECT COUNT(*) n FROM follows WHERE followee=$1 AND status='ok'", [u.id]);
   const countFollowing = await num("SELECT COUNT(*) n FROM follows WHERE follower=$1 AND status='ok'", [u.id]);
 
@@ -724,15 +735,26 @@ app.post('/api/posts/:id/tag', auth, async (req, res) => {
 });
 
 app.post('/api/posts/:id/repost', auth, async (req, res) => {
-  const o = await get('SELECT p.*,u.private AS priv FROM posts p JOIN users u ON u.id=p.user_id WHERE p.id=$1', [req.params.id]);
-  if (!o || (o.priv && o.user_id !== req.user.id)) return res.status(400).json({ error: 'Não é possível republicar este post.' });
+  const id = +req.params.id;
+  const me = req.user.id;
+  const o = await get('SELECT p.*,u.private AS priv FROM posts p JOIN users u ON u.id=p.user_id WHERE p.id=$1 AND p.deleted=0', [id]);
+  if (!o || (o.priv && o.user_id !== me)) return res.status(400).json({ error: 'Não é possível republicar este post.' });
+
+  const rootId = o.repost_of || o.id;
+
+  // Se já existir, remove todas as minhas republicações para este post
+  const removed = await run('UPDATE posts SET deleted=1 WHERE user_id=$1 AND repost_of=$2 AND deleted=0', [me, rootId]);
+  if (removed.rowCount) {
+    await run("DELETE FROM notifs WHERE actor_id=$1 AND post_id=$2 AND type='repost'", [me, o.id]);
+    return res.json({ ok: true, reposted: 0 });
+  }
 
   await run(
     'INSERT INTO posts(user_id,caption,media,type,repost_of,created) VALUES($1,$2,$3,$4,$5,$6)',
-    [req.user.id, o.caption, o.media, o.type, o.repost_of || o.id, Date.now()]
+    [me, o.caption, o.media, o.type, rootId, Date.now()]
   );
-  await notify(o.user_id, req.user.id, 'repost', o.id);
-  res.json({ ok: true });
+  await notify(o.user_id, me, 'repost', o.id);
+  res.json({ ok: true, reposted: 1 });
 });
 
 app.post('/api/posts/:id/like', auth, async (req, res) => {

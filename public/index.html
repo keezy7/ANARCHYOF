@@ -144,7 +144,7 @@ main{margin-left:72px}
 .bh{position:absolute;left:50%;top:50%;color:#fff;pointer-events:none;animation:burst .8s var(--ease) forwards;filter:drop-shadow(0 4px 16px rgba(0,0,0,.5));z-index:3}
 .pa{display:flex;gap:1.1rem;align-items:center;padding:.6rem 0 .3rem}
 .ab{display:inline-flex;align-items:center;gap:.4rem;font-weight:600}.ab:hover{opacity:.7}
-.ab.lk.on svg{fill:var(--red);stroke:var(--red)}
+.ab.lk.on svg{fill:var(--red);stroke:var(--red)}.ab.rp.on svg{stroke:var(--red);fill:var(--red)}
 .sci{flex:1;min-width:0;padding:.65rem 1rem;border-radius:999px;border:1px solid rgba(255,255,255,.35);background:rgba(10,14,20,.55);color:#fff;backdrop-filter:blur(6px)}.sci::placeholder{color:rgba(255,255,255,.7)}.sci:focus{border-color:#fff;box-shadow:none}
 .sl.on svg{fill:var(--red);stroke:var(--red)}.ab.lk.pop svg{animation:heart .45s var(--ease)}
 .pb p{margin:.2rem 0}.pb .pl{font-weight:700}.pb input{border:0;background:none;padding:.5rem 0;box-shadow:none}
@@ -1124,7 +1124,7 @@ const commentBlock = (p, c, isReply) => {
 
 const acts = (p) => `<button class="ab lk ${p.liked ? 'on' : ''} ${JL === p.id ? 'pop' : ''}" onclick="like(${p.id})" title="Curtir">${I('heart', 26)}${p.likes ? `<span>${p.likes}</span>` : ''}</button>
   <button class="ab" onclick="cmtBtn(${p.id},this)" title="Comentar">${I('comment', 25)}${p.ncomments ? `<span>${p.ncomments}</span>` : ''}</button>
-  <button class="ab" onclick="repost(${p.id})" title="Republicar">${I('repost', 25)}${p.reposts ? `<span>${p.reposts}</span>` : ''}</button>
+  <button class="ab rp ${p.reposted ? 'on' : ''}" onclick="repost(${p.id})" title="Republicar">${I('repost', 25)}${p.reposts ? `<span>${p.reposts}</span>` : ''}</button>
   <button class="ab" onclick="share(${p.id})" title="Enviar">${I('send', 24)}</button>`;
 const likesTxt = (p) => `${p.likes} curtida${p.likes === 1 ? '' : 's'}`;
 const tagsLine = (p) => (p.tags && p.tags.length ? `<p class="tg"><small>com</small> ${p.tags.map((t) => `<a onclick="go('profile','${t}')">@${esc(t)}</a>`).join('')}</p>` : '');
@@ -1183,7 +1183,7 @@ async function cmt(id, el) {
   else await api('/api/posts/' + id + '/comments', { method: 'POST', json: { text: t } });
   reload(id);
 }
-async function repost(id) { try { await api(`/api/posts/${id}/repost`, { method: 'POST' }); toast('Republicado no seu perfil'); reload(id); } catch (e) { toast(e.message); } }
+async function repost(id) { const p = P[id]; try { const r = await api(`/api/posts/${id}/repost`, { method: 'POST' }); toast(r && r.reposted ? 'Republicado no seu perfil' : 'Removido da sua aba Republicado'); reload(id); } catch (e) { toast(e.message); } }
 function postMenu(id) {
   const p = P[id];
   const own = p.user_id === me.id;
